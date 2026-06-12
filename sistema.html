@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0054)file:///Users/manuelorellana/Downloads/sistema_52.html -->
+<!-- saved from url=(0054)file:///Users/manuelorellana/Downloads/sistema_53.html -->
 <html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1849,7 +1849,7 @@ window.genQR=function(id){
   var r=DATA.recepciones.find(function(x){return x.id===id;});
   if(!r)return;
   var agros=DATA.campo.filter(function(cc){return cc.proveedor===r.proveedor&&cc.especie===r.especie;});
-  var txt='https://mafles-tra-gest-kpur4rtqc-tragest.vercel.app/trazabilidad.html?id='+r.id;
+  var txt='https://mafles-tra-gest.vercel.app/trazabilidad.html?id='+r.id;
   document.getElementById('qr-preview').style.display='block';
   var qrImg=document.getElementById('qr-canvas');
   var qrUrl='https://quickchart.io/qr?size=180&margin=1&dark=1a4a2e&text='+encodeURIComponent(txt);
@@ -1935,7 +1935,7 @@ window.renderVisorQR=function(){
           <div style="margin-bottom:6px">${evalBadges}</div>
           <div style="font-size:11px;color:#1a4a2e;font-weight:600"><i class="ti ti-plant-2"></i> ${agros.length} agroquímico(s) &nbsp;·&nbsp; <i class="ti ti-qrcode"></i> Ver ficha</div>
         </div>
-        <img src="https://quickchart.io/qr?size=70&margin=1&dark=1a4a2e&text=${encodeURIComponent('https://mafles-tra-gest-kpur4rtqc-tragest.vercel.app/trazabilidad.html?id='+r.id)}" width="70" height="70" style="border-radius:4px;flex-shrink:0" alt="QR" onerror="this.onerror=null;this.src='https://api.qrserver.com/v1/create-qr-code/?size=70x70&data='+encodeURIComponent('https://mafles-tra-gest-kpur4rtqc-tragest.vercel.app/trazabilidad.html?id='+r.id)"/>
+        <img src="https://quickchart.io/qr?size=70&margin=1&dark=1a4a2e&text=${encodeURIComponent('https://mafles-tra-gest.vercel.app/trazabilidad.html?id='+r.id)}" width="70" height="70" style="border-radius:4px;flex-shrink:0" alt="QR" onerror="this.onerror=null;this.src='https://api.qrserver.com/v1/create-qr-code/?size=70x70&data='+encodeURIComponent('https://mafles-tra-gest.vercel.app/trazabilidad.html?id='+r.id)"/>
       </div>
     </div>`;
   }).join('');
@@ -1945,7 +1945,7 @@ window.abrirVisModal=function(id){
   const r=DATA.recepciones.find(x=>x.id===id);
   if(!r)return;
   const agros=DATA.campo.filter(c=>c.proveedor===r.proveedor&&c.especie===r.especie);
-  const fichaData='https://mafles-tra-gest-kpur4rtqc-tragest.vercel.app/trazabilidad.html?id='+r.id;
+  const fichaData='https://mafles-tra-gest.vercel.app/trazabilidad.html?id='+r.id;
   // QR generado luego de mostrar el modal
   const evalHtml=r.eval?Object.entries(r.eval).map(([k,v])=>{
     const color=v==='Óptimo'?'badge-green':v==='Bueno'?'badge-blue':v==='Regular'?'badge-amber':'badge-red';
