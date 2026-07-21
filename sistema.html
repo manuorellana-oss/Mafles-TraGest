@@ -653,6 +653,39 @@ tr:hover td{background:#f8fcf8}
         </div>
       </div>
 
+
+      <!-- DASHBOARD KPI por Especie -->
+      <div class="card" id="kpi-dashboard-card">
+        <div class="card-title"><i class="ti ti-chart-bar"></i> Dashboard por Especie</div>
+
+        <!-- Filtro período -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+          <label style="font-size:12px;color:#666">Período:</label>
+          <select id="dash-periodo" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px" onchange="renderDashboard()">
+            <option value="">Todo el tiempo</option>
+            <option value="mes">Este mes</option>
+            <option value="semana">Esta semana</option>
+          </select>
+          <button class="btn btn-secondary" style="height:32px;font-size:12px" onclick="renderDashboard()"><i class="ti ti-refresh"></i> Actualizar</button>
+        </div>
+
+        <!-- Tabs especie dashboard -->
+        <div class="inner-tabs" id="dash-tabs" style="margin-bottom:14px">
+          <div class="itab active" onclick="showDashTab('todas',this)">Todas</div>
+          <div class="itab" onclick="showDashTab('Espárrago',this)">Espárrago</div>
+          <div class="itab" onclick="showDashTab('Cereza',this)">Cereza</div>
+          <div class="itab" onclick="showDashTab('Kiwi',this)">Kiwi</div>
+          <div class="itab" onclick="showDashTab('Uva',this)">Uva</div>
+          <div class="itab" onclick="showDashTab('Arándano',this)">Arándano</div>
+          <div class="itab" onclick="showDashTab('Mora',this)">Mora</div>
+          <div class="itab" onclick="showDashTab('Frambuesa',this)">Frambuesa</div>
+          <div class="itab" onclick="showDashTab('Frutilla',this)">Frutilla</div>
+        </div>
+
+        <!-- Contenedor del dashboard -->
+        <div id="dash-content"></div>
+      </div>
+
       <!-- Historial -->
       <div class="card">
         <div class="card-title"><i class="ti ti-list"></i> Historial KPI</div>
@@ -1050,7 +1083,7 @@ window.addEventListener('fbReady',async()=>{
   DATA.devoluciones=await fbLoad('devoluciones');
   DATA.kpi=await fbLoad('kpi');
   DATA.precios=await fbLoad('precios');
-  renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();
+  renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();
   pendQueue.forEach(({col,data})=>fbSave(col,data));pendQueue=[];
 });
 
@@ -1341,7 +1374,7 @@ window.saveRecepcion=function(){
   };
   DATA.recepciones.push(rec);
   fbSave('recepciones',rec);
-  renderRecepcionHist();renderEnvIngresos();renderQrList();poblarQrFiltros();
+  renderRecepcionHist();renderEnvIngresos();renderQrList();poblarQrFiltros();renderDashboard();
   limpiarRecepcion();
   showStatus('Recepción guardada ✓');
 }
@@ -1765,7 +1798,7 @@ window.saveKpi=function(){
     rend:rend+'%',merma:merma+'%',rendInd:rendInd,
     cmpa:'$'+fmtNum(cmpa),cmo:'$'+fmtNum(cmo),cdu:'$'+fmtNum(cdu)
   };
-  DATA.kpi.push(rec);fbSave('kpi',rec);renderKpiHist();limpiarKpi();
+  DATA.kpi.push(rec);fbSave('kpi',rec);renderKpiHist();renderDashboard();limpiarKpi();
   showStatus('KPI guardado ✓');
 }
 
@@ -1800,6 +1833,161 @@ window.delKpi=async function(id){
   renderKpiHist();
   showStatus('KPI eliminado');
 }
+
+
+// ===== DASHBOARD KPI =====
+let dashEspActual = 'todas';
+
+window.showDashTab = function(esp, el) {
+  dashEspActual = esp;
+  document.querySelectorAll('#dash-tabs .itab').forEach(b => b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderDashboard();
+};
+
+window.renderDashboard = function() {
+  const periodo = document.getElementById('dash-periodo')?.value || '';
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  // Filtrar recepciones por período
+  let recs = DATA.recepciones.filter(r => {
+    if(!periodo) return true;
+    const fd = new Date(r.fecha+'T12:00:00'); fd.setHours(0,0,0,0);
+    if(periodo === 'semana') {
+      const lun = new Date(hoy); lun.setDate(hoy.getDate()-((hoy.getDay()+6)%7));
+      const dom = new Date(lun); dom.setDate(lun.getDate()+6); dom.setHours(23,59,59,999);
+      return fd >= lun && fd <= dom;
+    }
+    if(periodo === 'mes') return fd.getMonth()===hoy.getMonth()&&fd.getFullYear()===hoy.getFullYear();
+    return true;
+  });
+
+  // Filtrar por especie si no es "todas"
+  const especiesVer = dashEspActual === 'todas'
+    ? ['Espárrago','Cereza','Kiwi','Uva','Arándano','Mora','Frambuesa','Frutilla']
+    : [dashEspActual];
+
+  const especiesConProceso = ['Kiwi','Cereza','Uva','Espárrago'];
+
+  let html = '';
+
+  especiesVer.forEach(esp => {
+    const recEsp = recs.filter(r => r.especie === esp);
+    if(recEsp.length === 0 && dashEspActual !== 'todas') {
+      html += '<div style="text-align:center;color:#aaa;padding:2rem">Sin recepciones para '+esp+' en el período seleccionado</div>';
+      return;
+    }
+    if(recEsp.length === 0) return; // saltar especie sin datos en vista "todas"
+
+    // Calcular KPIs de recepción
+    const totalKg = recEsp.reduce((s,r) => s + (parseFloat(r.bandejas)||0), 0);
+    const rechazados = recEsp.filter(r => (r.evaluacion||'').toLowerCase().includes('rechazo') || (r.evaluacion||'').toLowerCase().includes('rechazado'));
+    const kgRechazados = rechazados.reduce((s,r) => s + (parseFloat(r.bandejas)||0), 0);
+    const pctRechazo = totalKg > 0 ? ((kgRechazados/totalKg)*100).toFixed(1) : 0;
+
+    // Top 5 proveedores
+    const porProv = {};
+    recEsp.forEach(r => {
+      const pv = r.proveedor || 'Sin nombre';
+      porProv[pv] = (porProv[pv]||0) + (parseFloat(r.bandejas)||0);
+    });
+    const top5 = Object.entries(porProv).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const maxKg = top5.length > 0 ? top5[0][1] : 1;
+
+    // KPI de proceso (kiwi, cereza, uva, espárrago)
+    let htmlProceso = '';
+    if(especiesConProceso.includes(esp)) {
+      const kpiEsp = DATA.kpi.filter(k => {
+        if(k.especie !== esp) return false;
+        if(!periodo) return true;
+        const fd = new Date(k.fecha+'T12:00:00'); fd.setHours(0,0,0,0);
+        if(periodo==='semana'){const lun=new Date(hoy);lun.setDate(hoy.getDate()-((hoy.getDay()+6)%7));const dom=new Date(lun);dom.setDate(lun.getDate()+6);dom.setHours(23,59,59,999);return fd>=lun&&fd<=dom;}
+        if(periodo==='mes') return fd.getMonth()===hoy.getMonth()&&fd.getFullYear()===hoy.getFullYear();
+        return true;
+      });
+
+      if(kpiEsp.length > 0) {
+        const totalEntra = kpiEsp.reduce((s,k)=>s+(parseFloat(k.kgmp)||0),0);
+        const totalSale = kpiEsp.reduce((s,k)=>s+(parseFloat(k.kgpp)||0),0);
+        const rendProm = totalEntra>0?((totalSale/totalEntra)*100).toFixed(1):0;
+        const mermaProm = (100-parseFloat(rendProm)).toFixed(1);
+        const rendColor = parseFloat(rendProm)>=90?'#2e7d52':parseFloat(rendProm)>=80?'#f59e0b':'#dc2626';
+        const proceso = kpiEsp[0].proceso || 'Proceso';
+
+        htmlProceso = `
+          <div style="margin-top:10px;padding:10px;background:#f0f8f0;border-radius:8px;border-left:4px solid #2e7d52">
+            <div style="font-size:12px;font-weight:600;color:#1a4a2e;margin-bottom:8px">⚙️ Rendimiento Industrial — ${proceso}</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">
+              <div class="kpi-card"><div class="kpi-val">${fmtNum(totalEntra)} kg</div><div class="kpi-lbl">Kg Entran a Proceso</div></div>
+              <div class="kpi-card"><div class="kpi-val">${fmtNum(totalSale)} kg</div><div class="kpi-lbl">Kg Salen de Proceso</div></div>
+              <div class="kpi-card"><div class="kpi-val" style="color:${rendColor}">${rendProm}%</div><div class="kpi-lbl">Rendimiento Industrial</div></div>
+              <div class="kpi-card"><div class="kpi-val" style="color:#dc2626">${mermaProm}%</div><div class="kpi-lbl">Merma</div></div>
+              <div class="kpi-card"><div class="kpi-val">${kpiEsp.length}</div><div class="kpi-lbl">Registros de Proceso</div></div>
+            </div>
+          </div>`;
+      } else {
+        htmlProceso = `<div style="margin-top:8px;font-size:11px;color:#aaa;padding:6px 10px;background:#f5f5f5;border-radius:6px">Sin registros de proceso para ${esp} en el período</div>`;
+      }
+    }
+
+    // Construir tarjeta especie
+    const rechazoColor = parseFloat(pctRechazo)<=5?'#2e7d52':parseFloat(pctRechazo)<=10?'#f59e0b':'#dc2626';
+
+    html += `
+      <div style="margin-bottom:20px;border:1px solid #d0e8d0;border-radius:10px;padding:14px;background:#fafffe">
+        <div style="font-size:14px;font-weight:700;color:#1a4a2e;margin-bottom:12px;border-bottom:1px solid #e0f0e0;padding-bottom:6px">
+          🌿 ${esp}
+        </div>
+
+        <!-- KPIs Recepción -->
+        <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:6px">RECEPCIÓN</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:10px">
+          <div class="kpi-card">
+            <div class="kpi-val">${fmtNum(totalKg)} kg</div>
+            <div class="kpi-lbl">Total Recepcionado</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val">${recEsp.length}</div>
+            <div class="kpi-lbl">N° Recepciones</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val" style="color:${rechazoColor}">${fmtNum(kgRechazados)} kg</div>
+            <div class="kpi-lbl">Kg Rechazados</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-val" style="color:${rechazoColor}">${pctRechazo}%</div>
+            <div class="kpi-lbl">% Rechazo</div>
+          </div>
+        </div>
+
+        <!-- Top 5 Proveedores -->
+        <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:6px">TOP 5 PROVEEDORES</div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
+          ${top5.map(([prov, kg], i) => {
+            const pct = ((kg/maxKg)*100).toFixed(0);
+            const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+            return `<div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:14px">${medals[i]||''}</span>
+              <div style="flex:1">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px">
+                  <span style="color:#333;font-weight:500">${prov}</span>
+                  <span style="color:#1a4a2e;font-weight:700">${fmtNum(kg)} kg</span>
+                </div>
+                <div style="height:6px;background:#e0f0e0;border-radius:3px">
+                  <div style="height:6px;background:#2e7d52;border-radius:3px;width:${pct}%"></div>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        ${htmlProceso}
+      </div>`;
+  });
+
+  if(!html) html = '<div style="text-align:center;color:#aaa;padding:2rem">Sin datos de recepción para el período seleccionado</div>';
+  document.getElementById('dash-content').innerHTML = html;
+};
 
 // ===== PRECIO DE VENTA =====
 let pvEsp='Espárrago';
