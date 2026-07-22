@@ -282,6 +282,14 @@ tr:hover td{background:#f8fcf8}
       <div class="res-fecha-sel">
         <label><i class="ti ti-calendar"></i> Ver resumen del día:</label>
         <input type="date" id="res-fecha-input">
+        <label style="margin-left:8px"><i class="ti ti-plant-2"></i> Especie proceso:</label>
+        <select id="res-esp-sel" style="height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:8px;font-size:13px">
+          <option value="">Todas</option>
+          <option value="Espárrago">🌿 Espárrago</option>
+          <option value="Cereza">🍒 Cereza</option>
+          <option value="Kiwi">🥝 Kiwi</option>
+          <option value="Uva">🍇 Uva</option>
+        </select>
         <button class="btn btn-primary" onclick="renderResumen()"><i class="ti ti-refresh"></i> Actualizar</button>
       </div>
 
@@ -2126,11 +2134,19 @@ window.renderResumen = function(){
 
   // Header
   if(recs.length>0){
+    // Calcular kg por especie para el header
+    var kgEspHeader = {};
+    recs.forEach(function(r){ var e=r.especie||'?'; kgEspHeader[e]=(kgEspHeader[e]||0)+(parseFloat(r.bandejas)||0); });
+    var kgEspHtml = Object.entries(kgEspHeader).map(function(e){ return '<span style="background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px;font-size:12px">'+e[0]+': <b>'+fmtNum(e[1])+' kg</b></span>'; }).join(' ');
+
     document.getElementById('res-header-box').innerHTML =
       '<div class="res-header">' +
-        '<div><h2>📅 Resumen — ' + labelFecha + '</h2><div class="res-fecha">Actividad registrada en el sistema</div></div>' +
+        '<div>' +
+          '<h2>📅 Resumen — ' + labelFecha + '</h2>' +
+          '<div class="res-fecha" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+kgEspHtml+'</div>' +
+        '</div>' +
         '<div class="res-totales">' +
-          '<div class="res-tot-item"><div class="res-tot-val">'+fmtNum(totalKg)+' kg</div><div class="res-tot-lbl">kg totales</div></div>' +
+          '<div class="res-tot-item"><div class="res-tot-val">'+fmtNum(totalKg)+' kg</div><div class="res-tot-lbl">kg totales recep.</div></div>' +
           '<div class="res-tot-item"><div class="res-tot-val">'+recs.length+'</div><div class="res-tot-lbl">recepciones</div></div>' +
           '<div class="res-tot-item"><div class="res-tot-val">'+especiesActivas.length+'</div><div class="res-tot-lbl">especies</div></div>' +
         '</div>' +
@@ -2149,7 +2165,9 @@ window.renderResumen = function(){
     return;
   }
 
-  const todasEspecies = Object.keys(ESPECIE_META);
+  // Filtro por especie seleccionada
+  var espFiltro = document.getElementById('res-esp-sel')?.value || '';
+  const todasEspecies = espFiltro ? [espFiltro] : Object.keys(ESPECIE_META);
   const especiesVistas = new Set();
   let html = '<div>';
 
