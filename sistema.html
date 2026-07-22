@@ -233,6 +233,12 @@ tr:hover td{background:#f8fcf8}
         .res-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:14px}
         .res-kpi-pill{background:#f8fffe;border:1px solid #d0e8d0;border-radius:10px;padding:10px 12px;text-align:center;transition:transform .2s}
         .res-kpi-pill:hover{transform:translateY(-2px)}
+        @keyframes pillFloat{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+        .res-kpi-pill{animation:pillFloat 0.5s ease both}
+        .res-kpi-grid .res-kpi-pill:nth-child(1){animation-delay:.1s}
+        .res-kpi-grid .res-kpi-pill:nth-child(2){animation-delay:.18s}
+        .res-kpi-grid .res-kpi-pill:nth-child(3){animation-delay:.26s}
+        .res-kpi-grid .res-kpi-pill:nth-child(4){animation-delay:.34s}
         .res-kpi-pill .kpi-val{font-size:18px;font-weight:800;color:#1a4a2e;line-height:1.1}
         .res-kpi-pill .kpi-lbl{font-size:10px;color:#888;margin-top:3px}
         .res-kpi-pill.alert .kpi-val{color:#dc2626}
@@ -245,13 +251,25 @@ tr:hover td{background:#f8fcf8}
         .res-proceso-box{background:linear-gradient(135deg,#f0f9f0,#e8f5e9);border-radius:10px;padding:14px;border:1px solid #c8e6c9;margin-top:12px}
         .res-proceso-title{font-size:12px;font-weight:700;color:#1a4a2e;margin-bottom:10px;display:flex;align-items:center;gap:6px}
         .res-proceso-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
-        .res-proceso-item{background:#fff;border-radius:8px;padding:8px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+        .res-proceso-item{background:#fff;border-radius:50px;padding:14px 10px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,.10);border:2px solid #e8f5e9;opacity:0;transform:translateY(30px) scale(0.8);transition:all 0.5s cubic-bezier(.34,1.56,.64,1)}
+        .res-proceso-item.visible{opacity:1;transform:translateY(0) scale(1)}
+        .res-proceso-item:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 8px 25px rgba(0,0,0,.15)}
         .res-proceso-item .pval{font-size:16px;font-weight:800;line-height:1.1}
-        .res-proceso-item .plbl{font-size:10px;color:#888;margin-top:2px}
-        .res-proceso-item.destacado{background:linear-gradient(135deg,#1a4a2e,#2e7d52);color:#fff}
+        .res-proceso-item .plbl{font-size:10px;color:#888;margin-top:3px;line-height:1.3}
+        .res-proceso-item.destacado{background:linear-gradient(135deg,#1a4a2e,#2e7d52);color:#fff;border-color:#1a4a2e}
         .res-proceso-item.destacado .pval,.res-proceso-item.destacado .plbl{color:#fff}
-        .res-proceso-item.precio-min{background:linear-gradient(135deg,#7c2d12,#dc2626);color:#fff}
+        .res-proceso-item.precio-min{background:linear-gradient(135deg,#7c2d12,#dc2626);color:#fff;border-color:#dc2626;border-radius:16px}
         .res-proceso-item.precio-min .pval,.res-proceso-item.precio-min .plbl{color:#fff}
+        @keyframes bubblePop{0%{opacity:0;transform:translateY(40px) scale(0.5)}60%{transform:translateY(-8px) scale(1.08)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        .res-proceso-item.visible{animation:bubblePop 0.6s cubic-bezier(.34,1.56,.64,1) both}
+        .res-proceso-grid .res-proceso-item:nth-child(1).visible{animation-delay:.05s}
+        .res-proceso-grid .res-proceso-item:nth-child(2).visible{animation-delay:.12s}
+        .res-proceso-grid .res-proceso-item:nth-child(3).visible{animation-delay:.19s}
+        .res-proceso-grid .res-proceso-item:nth-child(4).visible{animation-delay:.26s}
+        .res-proceso-grid .res-proceso-item:nth-child(5).visible{animation-delay:.33s}
+        .res-proceso-grid .res-proceso-item:nth-child(6).visible{animation-delay:.40s}
+        .res-proceso-grid .res-proceso-item:nth-child(7).visible{animation-delay:.47s}
+        .res-proceso-grid .res-proceso-item:nth-child(8).visible{animation-delay:.54s}
         .res-top-prov{margin-top:12px}
         .res-top-title{font-size:12px;font-weight:700;color:#555;margin-bottom:8px}
         .res-prov-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
@@ -2242,7 +2260,7 @@ window.renderResumen = function(){
           '</div>' +
           '<div class="res-rend-bar"><div class="res-rend-fill '+rendBarClass+'" style="width:'+Math.min(rendProm,100)+'%"></div></div>' +
         '</div>' +
-        '<div class="res-proceso-grid">' +
+        '<div class="res-proceso-grid" id="proc-grid-'+esp+'">' +
           '<div class="res-proceso-item"><div class="pval" style="color:#1a4a2e">'+fmtNum(totalMP)+' kg</div><div class="plbl">Kg entran</div></div>' +
           '<div class="res-proceso-item"><div class="pval" style="color:#2e7d52">'+fmtNum(totalPP)+' kg</div><div class="plbl">Kg salen</div></div>' +
           '<div class="res-proceso-item"><div class="pval" style="color:'+rendColor+'">'+rendProm+'%</div><div class="plbl">Rendimiento</div></div>' +
@@ -2271,6 +2289,19 @@ window.renderResumen = function(){
 
   html += '</div>';
   document.getElementById('res-contenido').innerHTML = html;
+  // Activar animación burbujas con delay
+  setTimeout(function(){
+    document.querySelectorAll('.res-proceso-item').forEach(function(el, i){
+      setTimeout(function(){ el.classList.add('visible'); }, i * 70);
+    });
+  }, 100);
+  // Activar barra de rendimiento con animación
+  setTimeout(function(){
+    document.querySelectorAll('.res-rend-fill').forEach(function(el){
+      var w = el.style.width; el.style.width='0%';
+      setTimeout(function(){ el.style.width=w; },50);
+    });
+  }, 200);
 };
 
 // ===== PRECIO DE VENTA =====
