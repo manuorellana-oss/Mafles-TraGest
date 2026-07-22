@@ -203,7 +203,8 @@ tr:hover td{background:#f8fcf8}
   </div>
 
   <div class="nav-tabs" id="nav-tabs">
-    <div class="nav-tab active" onclick="showMod(&#39;recepcion&#39;,this)" data-mod="recepcion"><i class="ti ti-clipboard-check"></i> Recepción</div>
+    <div class="nav-tab active" onclick="showMod(&#39;resumen&#39;,this);initResumen();" data-mod="resumen"><i class="ti ti-layout-dashboard"></i> Resumen</div>
+    <div class="nav-tab" onclick="showMod(&#39;recepcion&#39;,this)" data-mod="recepcion"><i class="ti ti-clipboard-check"></i> Recepción</div>
     <div class="nav-tab" onclick="showMod(&#39;campo&#39;,this)" data-mod="campo"><i class="ti ti-plant-2"></i> Campo</div>
     <div class="nav-tab" onclick="showMod(&#39;envases&#39;,this)" data-mod="envases"><i class="ti ti-box"></i> Envases</div>
     <div class="nav-tab" onclick="showMod(&#39;kpi&#39;,this)" data-mod="kpi"><i class="ti ti-chart-bar"></i> KPI</div>
@@ -212,6 +213,80 @@ tr:hover td{background:#f8fcf8}
   </div>
 
   <div class="content">
+
+    
+    <!-- RESUMEN DÍA -->
+    <div class="module" id="mod-resumen">
+      <style>
+        .res-header{background:linear-gradient(135deg,#1a4a2e,#2e7d52);border-radius:14px;padding:20px 24px;margin-bottom:20px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+        .res-header h2{margin:0;font-size:18px;font-weight:700}
+        .res-header .res-fecha{font-size:13px;opacity:.8;margin-top:4px}
+        .res-totales{display:flex;gap:24px;flex-wrap:wrap}
+        .res-tot-item{text-align:center}
+        .res-tot-val{font-size:26px;font-weight:800;line-height:1}
+        .res-tot-lbl{font-size:11px;opacity:.75;margin-top:2px}
+        .res-especie-card{background:#fff;border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);border-left:5px solid #2e7d52}
+        .res-especie-title{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+        .res-especie-emoji{font-size:28px}
+        .res-especie-nombre{font-size:16px;font-weight:700;color:#1a4a2e}
+        .res-especie-proceso{font-size:11px;color:#888;background:#f0f8f0;padding:2px 8px;border-radius:20px}
+        .res-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+        .res-kpi-pill{background:#f8fffe;border:1px solid #d0e8d0;border-radius:10px;padding:10px 12px;text-align:center;transition:transform .2s}
+        .res-kpi-pill:hover{transform:translateY(-2px)}
+        .res-kpi-pill .kpi-val{font-size:18px;font-weight:800;color:#1a4a2e;line-height:1.1}
+        .res-kpi-pill .kpi-lbl{font-size:10px;color:#888;margin-top:3px}
+        .res-kpi-pill.alert .kpi-val{color:#dc2626}
+        .res-kpi-pill.warn .kpi-val{color:#f59e0b}
+        .res-kpi-pill.good .kpi-val{color:#16a34a}
+        .res-rend-bar{background:#e8f5e9;border-radius:20px;height:10px;overflow:hidden;margin:4px 0 10px}
+        .res-rend-fill{height:100%;border-radius:20px;transition:width 1s ease;background:linear-gradient(90deg,#2e7d52,#4ade80)}
+        .res-rend-fill.warn{background:linear-gradient(90deg,#f59e0b,#fcd34d)}
+        .res-rend-fill.alert{background:linear-gradient(90deg,#dc2626,#f87171)}
+        .res-proceso-box{background:linear-gradient(135deg,#f0f9f0,#e8f5e9);border-radius:10px;padding:14px;border:1px solid #c8e6c9;margin-top:12px}
+        .res-proceso-title{font-size:12px;font-weight:700;color:#1a4a2e;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+        .res-proceso-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+        .res-proceso-item{background:#fff;border-radius:8px;padding:8px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+        .res-proceso-item .pval{font-size:16px;font-weight:800;line-height:1.1}
+        .res-proceso-item .plbl{font-size:10px;color:#888;margin-top:2px}
+        .res-proceso-item.destacado{background:linear-gradient(135deg,#1a4a2e,#2e7d52);color:#fff}
+        .res-proceso-item.destacado .pval,.res-proceso-item.destacado .plbl{color:#fff}
+        .res-proceso-item.precio-min{background:linear-gradient(135deg,#7c2d12,#dc2626);color:#fff}
+        .res-proceso-item.precio-min .pval,.res-proceso-item.precio-min .plbl{color:#fff}
+        .res-top-prov{margin-top:12px}
+        .res-top-title{font-size:12px;font-weight:700;color:#555;margin-bottom:8px}
+        .res-prov-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+        .res-prov-medal{font-size:16px;width:24px;text-align:center}
+        .res-prov-bar-wrap{flex:1}
+        .res-prov-name{font-size:12px;color:#333;font-weight:500;margin-bottom:2px}
+        .res-prov-bar-bg{height:6px;background:#e0f0e0;border-radius:3px}
+        .res-prov-bar-fg{height:6px;border-radius:3px;transition:width 1s ease}
+        .res-prov-kg{font-size:12px;font-weight:700;color:#1a4a2e;min-width:70px;text-align:right}
+        .res-fecha-sel{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+        .res-fecha-sel label{font-size:13px;color:#666;font-weight:500}
+        .res-fecha-sel input[type=date]{height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:8px;font-size:13px}
+        @keyframes fadeSlideIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        .res-especie-card{animation:fadeSlideIn .4s ease both}
+        .res-especie-card:nth-child(2){animation-delay:.07s}
+        .res-especie-card:nth-child(3){animation-delay:.14s}
+        .res-especie-card:nth-child(4){animation-delay:.21s}
+        .res-especie-card:nth-child(5){animation-delay:.28s}
+        .res-especie-card:nth-child(6){animation-delay:.35s}
+        .res-especie-card:nth-child(7){animation-delay:.42s}
+        .res-especie-card:nth-child(8){animation-delay:.49s}
+        @keyframes countUp{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+        .res-kpi-pill .kpi-val{animation:countUp .5s ease both}
+      </style>
+
+      <div id="res-header-box"></div>
+
+      <div class="res-fecha-sel">
+        <label><i class="ti ti-calendar"></i> Ver resumen del día:</label>
+        <input type="date" id="res-fecha-input">
+        <button class="btn btn-primary" onclick="renderResumen()"><i class="ti ti-refresh"></i> Actualizar</button>
+      </div>
+
+      <div id="res-contenido"></div>
+    </div>
 
     <!-- RECEPCION -->
     <div class="module active" id="mod-recepcion">
@@ -2011,6 +2086,173 @@ window.renderDashboard = function() {
   }
   if(!html) html = '<div style="text-align:center;color:#aaa;padding:2rem">Sin datos de recepción para el período seleccionado</div>';
   document.getElementById('dash-content').innerHTML = banner + html;
+};
+
+
+// ===== MÓDULO RESUMEN =====
+const ESPECIE_META = {
+  'Esparrago':  {emoji:'🌿', color:'#2e7d52', proceso:'Seleccion / Calibracion', tieneProc:true},
+  'Espárrago':  {emoji:'🌿', color:'#2e7d52', proceso:'Selección / Calibración', tieneProc:true},
+  'Cereza':     {emoji:'🍒', color:'#dc2626', proceso:'Selección',               tieneProc:true},
+  'Kiwi':       {emoji:'🥝', color:'#65a30d', proceso:'Pelado',                  tieneProc:true},
+  'Uva':        {emoji:'🍇', color:'#7c3aed', proceso:'Desgrane',                tieneProc:true},
+  'Arandano':   {emoji:'🫐', color:'#2563eb', proceso:null, tieneProc:false},
+  'Arándano':   {emoji:'🫐', color:'#2563eb', proceso:null, tieneProc:false},
+  'Mora':       {emoji:'🖤', color:'#374151', proceso:null, tieneProc:false},
+  'Frambuesa':  {emoji:'🍓', color:'#e11d48', proceso:null, tieneProc:false},
+  'Frutilla':   {emoji:'🍓', color:'#f97316', proceso:null, tieneProc:false},
+};
+
+function initResumen(){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const ayer = new Date(hoy); ayer.setDate(hoy.getDate()-1);
+  const dd = String(ayer.getDate()).padStart(2,'0');
+  const mm = String(ayer.getMonth()+1).padStart(2,'0');
+  document.getElementById('res-fecha-input').value = ayer.getFullYear()+'-'+mm+'-'+dd;
+  renderResumen();
+}
+
+window.renderResumen = function(){
+  const fechaVal = document.getElementById('res-fecha-input')?.value;
+  if(!fechaVal) return;
+  const fechaObj = new Date(fechaVal+'T12:00:00'); fechaObj.setHours(0,0,0,0);
+  const labelFecha = fechaObj.toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const recs = DATA.recepciones.filter(r=>{ const fd=new Date(r.fecha+'T12:00:00');fd.setHours(0,0,0,0);return fd.getTime()===fechaObj.getTime(); });
+  const kpis = DATA.kpi.filter(k=>{ const fd=new Date(k.fecha+'T12:00:00');fd.setHours(0,0,0,0);return fd.getTime()===fechaObj.getTime(); });
+
+  const totalKg = recs.reduce((s,r)=>s+(parseFloat(r.bandejas)||0),0);
+  const especiesActivas = [...new Set(recs.map(r=>r.especie))];
+
+  // Header
+  if(recs.length>0){
+    document.getElementById('res-header-box').innerHTML =
+      '<div class="res-header">' +
+        '<div><h2>📅 Resumen — ' + labelFecha + '</h2><div class="res-fecha">Actividad registrada en el sistema</div></div>' +
+        '<div class="res-totales">' +
+          '<div class="res-tot-item"><div class="res-tot-val">'+fmtNum(totalKg)+' kg</div><div class="res-tot-lbl">kg totales</div></div>' +
+          '<div class="res-tot-item"><div class="res-tot-val">'+recs.length+'</div><div class="res-tot-lbl">recepciones</div></div>' +
+          '<div class="res-tot-item"><div class="res-tot-val">'+especiesActivas.length+'</div><div class="res-tot-lbl">especies</div></div>' +
+        '</div>' +
+      '</div>';
+  } else {
+    document.getElementById('res-header-box').innerHTML='';
+  }
+
+  if(recs.length===0 && kpis.length===0){
+    document.getElementById('res-contenido').innerHTML =
+      '<div class="card" style="text-align:center;padding:3rem">' +
+        '<div style="font-size:48px;margin-bottom:12px">📭</div>' +
+        '<div style="font-size:16px;color:#888">Sin actividad registrada para el día seleccionado</div>' +
+        '<div style="font-size:13px;color:#aaa;margin-top:6px">'+labelFecha+'</div>' +
+      '</div>';
+    return;
+  }
+
+  const todasEspecies = Object.keys(ESPECIE_META);
+  const especiesVistas = new Set();
+  let html = '<div>';
+
+  todasEspecies.forEach(function(esp){
+    if(especiesVistas.has(esp)) return;
+    const meta = ESPECIE_META[esp];
+    const recEsp = recs.filter(function(r){ return r.especie===esp; });
+    const kpiEsp = kpis.filter(function(k){ return k.especie===esp; });
+    if(recEsp.length===0 && kpiEsp.length===0) return;
+
+    // Marcar variantes como vistas
+    especiesVistas.add(esp);
+
+    const totalKgEsp = recEsp.reduce(function(s,r){ return s+(parseFloat(r.bandejas)||0); },0);
+    const rechazados = recEsp.filter(function(r){ return (r.evaluacion||'').match(/rechazo/i); });
+    const kgRechaz = rechazados.reduce(function(s,r){ return s+(parseFloat(r.bandejas)||0); },0);
+    const pctRechaz = totalKgEsp>0?((kgRechaz/totalKgEsp)*100).toFixed(1):0;
+    const rechColor = parseFloat(pctRechaz)<=5?'good':parseFloat(pctRechaz)<=10?'warn':'alert';
+
+    // Top 3 proveedores
+    var porProv = {};
+    recEsp.forEach(function(r){ var p=r.proveedor||'?'; porProv[p]=(porProv[p]||0)+(parseFloat(r.bandejas)||0); });
+    var top3 = Object.entries(porProv).sort(function(a,b){ return b[1]-a[1]; }).slice(0,3);
+    var maxKgProv = top3.length>0?top3[0][1]:1;
+    var medals = ['🥇','🥈','🥉'];
+
+    var htmlRec = '<div class="res-kpi-grid">' +
+      '<div class="res-kpi-pill good"><div class="kpi-val">'+fmtNum(totalKgEsp)+' kg</div><div class="kpi-lbl">Total recepcionado</div></div>' +
+      '<div class="res-kpi-pill"><div class="kpi-val">'+recEsp.length+'</div><div class="kpi-lbl">Recepciones</div></div>' +
+      '<div class="res-kpi-pill '+rechColor+'"><div class="kpi-val">'+fmtNum(kgRechaz)+' kg</div><div class="kpi-lbl">Kg rechazados</div></div>' +
+      '<div class="res-kpi-pill '+rechColor+'"><div class="kpi-val">'+pctRechaz+'%</div><div class="kpi-lbl">% Rechazo</div></div>' +
+    '</div>';
+
+    var htmlProv = '';
+    if(top3.length>0){
+      htmlProv = '<div class="res-top-prov"><div class="res-top-title">🏆 Top proveedores del día</div>';
+      top3.forEach(function(entry, i){
+        var prov = entry[0]; var kg = entry[1];
+        var pct = ((kg/maxKgProv)*100).toFixed(0);
+        htmlProv += '<div class="res-prov-row">' +
+          '<div class="res-prov-medal">'+(medals[i]||'')+'</div>' +
+          '<div class="res-prov-bar-wrap">' +
+            '<div class="res-prov-name">'+prov+'</div>' +
+            '<div class="res-prov-bar-bg"><div class="res-prov-bar-fg" style="width:'+pct+'%;background:'+meta.color+'"></div></div>' +
+          '</div>' +
+          '<div class="res-prov-kg">'+fmtNum(kg)+' kg</div>' +
+        '</div>';
+      });
+      htmlProv += '</div>';
+    }
+
+    var htmlProc = '';
+    if(meta.tieneProc && kpiEsp.length>0){
+      var totalMP = kpiEsp.reduce(function(s,k){ return s+(parseFloat(k.kgmp)||0); },0);
+      var totalPP = kpiEsp.reduce(function(s,k){ return s+(parseFloat(k.kgpp)||0); },0);
+      var rendProm = totalMP>0?((totalPP/totalMP)*100).toFixed(1):0;
+      var mermaProm = (100-parseFloat(rendProm)).toFixed(1);
+      var rendColor = parseFloat(rendProm)>=90?'#16a34a':parseFloat(rendProm)>=80?'#f59e0b':'#dc2626';
+      var rendBarClass = parseFloat(rendProm)>=90?'':parseFloat(rendProm)>=80?'warn':'alert';
+
+      function parsePesos(v){ return parseFloat((v||'0').toString().replace(/[$,.]/g,''))||0; }
+      var avgCmpa = Math.round(kpiEsp.reduce(function(s,k){ return s+parsePesos(k.cmpa); },0)/kpiEsp.length);
+      var avgCmo  = Math.round(kpiEsp.reduce(function(s,k){ return s+parsePesos(k.cmo); },0)/kpiEsp.length);
+      var avgCdu  = Math.round(kpiEsp.reduce(function(s,k){ return s+parsePesos(k.cdu); },0)/kpiEsp.length);
+      var avgRendInd = (kpiEsp.reduce(function(s,k){ return s+(parseFloat(k.rendInd)||0); },0)/kpiEsp.length).toFixed(2);
+
+      htmlProc = '<div class="res-proceso-box" style="border-color:'+meta.color+'44">' +
+        '<div class="res-proceso-title"><i class="ti ti-settings"></i> Proceso: '+meta.proceso+'</div>' +
+        '<div style="margin-bottom:8px">' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;color:#555;margin-bottom:3px">' +
+            '<span>Rendimiento industrial</span><span style="font-weight:700;color:'+rendColor+'">'+rendProm+'%</span>' +
+          '</div>' +
+          '<div class="res-rend-bar"><div class="res-rend-fill '+rendBarClass+'" style="width:'+Math.min(rendProm,100)+'%"></div></div>' +
+        '</div>' +
+        '<div class="res-proceso-grid">' +
+          '<div class="res-proceso-item"><div class="pval" style="color:#1a4a2e">'+fmtNum(totalMP)+' kg</div><div class="plbl">Kg entran</div></div>' +
+          '<div class="res-proceso-item"><div class="pval" style="color:#2e7d52">'+fmtNum(totalPP)+' kg</div><div class="plbl">Kg salen</div></div>' +
+          '<div class="res-proceso-item"><div class="pval" style="color:'+rendColor+'">'+rendProm+'%</div><div class="plbl">Rendimiento</div></div>' +
+          '<div class="res-proceso-item"><div class="pval" style="color:#dc2626">'+mermaProm+'%</div><div class="plbl">Merma</div></div>' +
+          '<div class="res-proceso-item"><div class="pval" style="color:#7c3aed">'+avgRendInd+'</div><div class="plbl">Rend. Ind.<br>kg/pers×hr</div></div>' +
+          '<div class="res-proceso-item destacado"><div class="pval">$'+fmtNum(avgCmpa)+'</div><div class="plbl">CMP Ajustado<br>$/kg</div></div>' +
+          '<div class="res-proceso-item destacado"><div class="pval">$'+fmtNum(avgCmo)+'</div><div class="plbl">CMO<br>$/kg</div></div>' +
+          '<div class="res-proceso-item precio-min"><div class="pval">$'+fmtNum(avgCdu)+'</div><div class="plbl">CDU = Precio<br>mínimo venta</div></div>' +
+        '</div>' +
+      '</div>';
+    } else if(meta.tieneProc && kpiEsp.length===0){
+      htmlProc = '<div style="margin-top:10px;padding:8px 12px;background:#fff9e6;border-radius:8px;font-size:12px;color:#b45309">⚠️ Sin registros de proceso para '+esp+' en esta fecha</div>';
+    }
+
+    html += '<div class="res-especie-card" style="border-left-color:'+meta.color+'">' +
+      '<div class="res-especie-title">' +
+        '<div class="res-especie-emoji">'+meta.emoji+'</div>' +
+        '<div>' +
+          '<div class="res-especie-nombre">'+esp+'</div>' +
+          (meta.proceso?'<span class="res-especie-proceso">⚙️ '+meta.proceso+'</span>':'') +
+        '</div>' +
+      '</div>' +
+      htmlRec + htmlProv + htmlProc +
+    '</div>';
+  });
+
+  html += '</div>';
+  document.getElementById('res-contenido').innerHTML = html;
 };
 
 // ===== PRECIO DE VENTA =====
