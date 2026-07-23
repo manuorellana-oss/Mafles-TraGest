@@ -2386,13 +2386,54 @@ function renderProdResumen(p, tab){
   } else if(tab==='bandejas'){
     var devs = (DATA.devoluciones||[]).filter(function(d){ return d.proveedor===p.nombre; });
     var envs = (DATA.recepciones||[]).filter(function(r){ return r.proveedor===p.nombre||r.rut===p.rut; });
-    var totalEnv = envs.reduce(function(s,r){return s+(parseInt(r.bandejas)||0);},0);
-    var totalDev = devs.reduce(function(s,d){return s+(parseInt(d.cantidad)||0);},0);
-    box.innerHTML = '<div class="prod-resumen-kg">'+
-      '<div class="prod-kg-card"><div class="val">'+fmtNum(totalEnv)+'</div><div class="lbl">Envases ingresados</div></div>'+
-      '<div class="prod-kg-card"><div class="val">'+fmtNum(totalDev)+'</div><div class="lbl">Envases devueltos</div></div>'+
-      '<div class="prod-kg-card" style="border-left:3px solid #dc2626"><div class="val" style="color:#dc2626">'+fmtNum(totalEnv-totalDev)+'</div><div class="lbl">Saldo pendiente</div></div>'+
-    '</div>';
+
+    var tipos = [
+      'Bandeja 3/4 (Espárrago/Kiwi/Uva/Cereza)',
+      'Bandeja arándanos',
+      'Rejilla verde (Mora/Frambuesa)',
+      'Bandeja frutillera'
+    ];
+
+    var htmlBand = '<div style="margin-bottom:14px">';
+    htmlBand += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    htmlBand += '<thead><tr style="background:#1a4a2e;color:#fff">';
+    htmlBand += '<th style="padding:8px 10px;text-align:left">Tipo Envase</th>';
+    htmlBand += '<th style="padding:8px 10px;text-align:center">Ingresados</th>';
+    htmlBand += '<th style="padding:8px 10px;text-align:center">Devueltos</th>';
+    htmlBand += '<th style="padding:8px 10px;text-align:center;background:#dc2626">Saldo</th>';
+    htmlBand += '</tr></thead><tbody>';
+
+    var totalIng = 0, totalDev = 0;
+
+    tipos.forEach(function(tipo, i){
+      var ing = envs.filter(function(r){ return (r.envase||'')=== tipo; })
+                    .reduce(function(s,r){return s+(parseInt(r.bandejas)||0);},0);
+      var dev = devs.filter(function(d){ return (d.tipo||'')=== tipo; })
+                    .reduce(function(s,d){return s+(parseInt(d.cantidad)||0);},0);
+      var saldo = ing - dev;
+      totalIng += ing; totalDev += dev;
+      var fondo = i%2===0?'#f8fffe':'#ffffff';
+      var saldoColor = saldo>0?'#dc2626':'#16a34a';
+      htmlBand += '<tr style="background:'+fondo+'">';
+      htmlBand += '<td style="padding:7px 10px;color:#333;font-weight:500">'+tipo+'</td>';
+      htmlBand += '<td style="padding:7px 10px;text-align:center;color:#1a4a2e;font-weight:700">'+fmtNum(ing)+'</td>';
+      htmlBand += '<td style="padding:7px 10px;text-align:center;color:#2e7d52;font-weight:700">'+fmtNum(dev)+'</td>';
+      htmlBand += '<td style="padding:7px 10px;text-align:center;font-weight:800;color:'+saldoColor+'">'+fmtNum(saldo)+'</td>';
+      htmlBand += '</tr>';
+    });
+
+    // Fila totales
+    var saldoTotal = totalIng - totalDev;
+    var saldoTotalColor = saldoTotal>0?'#dc2626':'#16a34a';
+    htmlBand += '<tr style="background:#1a4a2e;color:#fff">';
+    htmlBand += '<td style="padding:8px 10px;font-weight:700">TOTAL</td>';
+    htmlBand += '<td style="padding:8px 10px;text-align:center;font-weight:800">'+fmtNum(totalIng)+'</td>';
+    htmlBand += '<td style="padding:8px 10px;text-align:center;font-weight:800">'+fmtNum(totalDev)+'</td>';
+    htmlBand += '<td style="padding:8px 10px;text-align:center;font-weight:800;color:'+(saldoTotal>0?'#fca5a5':'#86efac')+'">'+fmtNum(saldoTotal)+'</td>';
+    htmlBand += '</tr>';
+    htmlBand += '</tbody></table></div>';
+
+    box.innerHTML = htmlBand;
   } else if(tab==='contacto'){
     box.innerHTML = '<div style="font-size:13px;line-height:2;color:#333">'+
       '<div><b>Teléfono:</b> '+(p.telefono||'—')+'</div>'+
