@@ -266,13 +266,19 @@ tr:hover td{background:#f8fcf8}
 
           <div class="form-group">
             <label>RUT *</label>
-            <input type="text" id="prod-rut" placeholder="12345678-9" maxlength="10" oninput="formatRutProd()">
+            <div style="position:relative">
+              <input type="text" id="prod-rut" placeholder="12345678-9" maxlength="10" oninput="formatRutProd();autocomplProdRut()" autocomplete="off">
+              <div class="agro-dropdown" id="drop-prod-rut"></div>
+            </div>
             <div class="prod-rut-hint">Formato: 12345678-9</div>
           </div>
 
           <div class="form-group">
             <label>Nombre / Razón Social *</label>
-            <input type="text" id="prod-nombre" placeholder="Nombre completo o empresa">
+            <div style="position:relative">
+              <input type="text" id="prod-nombre" placeholder="Nombre completo o empresa" oninput="autocomplProdNombre()" autocomplete="off">
+              <div class="agro-dropdown" id="drop-prod-nombre"></div>
+            </div>
           </div>
 
           <div class="form-group">
@@ -1504,6 +1510,15 @@ window.selProv=function(inputId,dropId,prov,rut){
 }
 
 document.addEventListener('click',function(e){
+  if(!e.target.closest('#prod-rut') && !e.target.closest('#drop-prod-rut')){
+    var d = document.getElementById('drop-prod-rut');
+    if(d) d.style.display='none';
+  }
+  if(!e.target.closest('#prod-nombre') && !e.target.closest('#drop-prod-nombre')){
+    var d2 = document.getElementById('drop-prod-nombre');
+    if(d2) d2.style.display='none';
+  }
+
   if(!e.target.closest('.agro-search-wrap')&&!e.target.closest('.agro-dropdown')&&!e.target.closest('[oninput]')){
     document.querySelectorAll('.agro-dropdown').forEach(d=>d.style.display='none');
   }
@@ -2294,6 +2309,36 @@ window.renderDashboard = function() {
 
 
 // ===== MÓDULO PRODUCTORES =====
+
+function autocomplProdRut(){
+  var q = (document.getElementById('prod-rut').value||'').toLowerCase().replace(/[^0-9k]/g,'');
+  var drop = document.getElementById('drop-prod-rut');
+  if(!q || q.length < 2){ drop.innerHTML=''; drop.style.display='none'; return; }
+  var prods = (DATA.productores||[]).filter(function(p){
+    return (p.rut||'').toLowerCase().replace(/[^0-9k]/g,'').includes(q);
+  }).slice(0,6);
+  if(prods.length===0){ drop.innerHTML=''; drop.style.display='none'; return; }
+  drop.innerHTML = prods.map(function(p){
+    return '<div class="agro-opt" onclick="cargarProductorFicha(\'' + p.id + '\')">' +
+      '<b>' + p.rut + '</b> <span style="color:#888;font-size:11px">' + p.nombre + '</span></div>';
+  }).join('');
+  drop.style.display='block';
+}
+
+function autocomplProdNombre(){
+  var q = (document.getElementById('prod-nombre').value||'').toLowerCase().trim();
+  var drop = document.getElementById('drop-prod-nombre');
+  if(!q || q.length < 2){ drop.innerHTML=''; drop.style.display='none'; return; }
+  var prods = (DATA.productores||[]).filter(function(p){
+    return (p.nombre||'').toLowerCase().includes(q);
+  }).slice(0,6);
+  if(prods.length===0){ drop.innerHTML=''; drop.style.display='none'; return; }
+  drop.innerHTML = prods.map(function(p){
+    return '<div class="agro-opt" onclick="cargarProductorFicha(\'' + p.id + '\')">' +
+      '<b>' + p.nombre + '</b> <span style="color:#888;font-size:11px">' + p.rut + '</span></div>';
+  }).join('');
+  drop.style.display='block';
+}
 
 function formatRutProd(){
   var el = document.getElementById('prod-rut');
