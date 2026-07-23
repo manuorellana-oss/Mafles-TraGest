@@ -203,7 +203,8 @@ tr:hover td{background:#f8fcf8}
   </div>
 
   <div class="nav-tabs" id="nav-tabs">
-    <div class="nav-tab active" onclick="showMod(&#39;resumen&#39;,this);initResumen();" data-mod="resumen"><i class="ti ti-layout-dashboard"></i> Resumen</div>
+    <div class="nav-tab active" onclick="showMod(&#39;resumen&#39;,this);initResumen();" data-mod="resumen"><i class="ti ti-users"></i> Productores</div>
+    <div class="nav-tab" onclick="showMod(&#39;resumen&#39;,this);initResumen();" data-mod="resumen"><i class="ti ti-layout-dashboard"></i> Resumen</div>
     <div class="nav-tab" onclick="showMod(&#39;recepcion&#39;,this)" data-mod="recepcion"><i class="ti ti-clipboard-check"></i> Recepción</div>
     <div class="nav-tab" onclick="showMod(&#39;campo&#39;,this)" data-mod="campo"><i class="ti ti-plant-2"></i> Campo</div>
     <div class="nav-tab" onclick="showMod(&#39;envases&#39;,this)" data-mod="envases"><i class="ti ti-box"></i> Envases</div>
@@ -215,6 +216,182 @@ tr:hover td{background:#f8fcf8}
   <div class="content">
 
     
+    
+    <!-- PRODUCTORES -->
+    <div class="module" id="mod-productores">
+      <style>
+        .prod-layout{display:grid;grid-template-columns:340px 1fr;gap:16px}
+        @media(max-width:900px){.prod-layout{grid-template-columns:1fr}}
+        .prod-ficha{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+        .prod-ficha h3{font-size:14px;font-weight:700;color:#1a4a2e;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #e8f5e9}
+        .prod-ficha .form-group{margin-bottom:10px}
+        .prod-ficha .form-group label{font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px}
+        .prod-ficha .form-group input,.prod-ficha .form-group select{width:100%;height:32px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box}
+        .prod-ficha .form-group input:focus,.prod-ficha .form-group select:focus{outline:none;border-color:#2e7d52;box-shadow:0 0 0 2px rgba(46,125,82,.15)}
+        .prod-rut-hint{font-size:10px;color:#aaa;margin-top:2px}
+        .prod-btns{display:flex;gap:8px;margin-top:14px}
+        .prod-panel{background:#fff;border-radius:12px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+        .prod-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+        .prod-itab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:#f0f8f0;color:#2e7d52;border:1px solid #d0e8d0;transition:all .2s}
+        .prod-itab.active{background:#1a4a2e;color:#fff;border-color:#1a4a2e}
+        .prod-resumen-kg{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+        .prod-kg-card{background:#f8fffe;border:1px solid #d0e8d0;border-radius:10px;padding:12px;text-align:center}
+        .prod-kg-card .val{font-size:20px;font-weight:800;color:#1a4a2e}
+        .prod-kg-card .lbl{font-size:11px;color:#888;margin-top:3px}
+        .prod-lista{margin-top:20px}
+        .prod-lista h3{font-size:13px;font-weight:700;color:#1a4a2e;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+        .prod-search{width:220px;height:32px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:12px}
+        .prod-table{width:100%;border-collapse:collapse;font-size:12px}
+        .prod-table th{background:#1a4a2e;color:#fff;padding:8px 12px;text-align:left;font-weight:600}
+        .prod-table td{padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#333}
+        .prod-table tr:hover td{background:#f8fffe;cursor:pointer}
+        .prod-table tr:nth-child(even) td{background:#fafffe}
+        .prod-table tr:nth-child(even):hover td{background:#f0f8f0}
+        .prod-empty{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+        .prod-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+        .prod-badge.activo{background:#dcfce7;color:#16a34a}
+        .prod-highlight{background:#fff9c4 !important}
+      </style>
+
+      <div class="prod-layout">
+        <!-- Panel izquierdo: Ficha -->
+        <div class="prod-ficha">
+          <h3><i class="ti ti-user-plus"></i> Ficha del Productor</h3>
+
+          <div class="form-group" style="position:relative">
+            <label>Buscar por Nombre o RUT</label>
+            <input type="text" id="prod-buscar" placeholder="Escriba nombre o RUT..." oninput="buscarProductorInput()" autocomplete="off">
+            <div class="agro-dropdown" id="drop-prod-buscar"></div>
+          </div>
+
+          <div class="form-group">
+            <label>RUT *</label>
+            <input type="text" id="prod-rut" placeholder="12345678-9" maxlength="10" oninput="formatRutProd()">
+            <div class="prod-rut-hint">Formato: 12345678-9</div>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre / Razón Social *</label>
+            <input type="text" id="prod-nombre" placeholder="Nombre completo o empresa">
+          </div>
+
+          <div class="form-group">
+            <label>Giro</label>
+            <input type="text" id="prod-giro" placeholder="Ej: Cultivo de frutas de pepita">
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" id="prod-telefono" placeholder="+56 9 1234 5678">
+          </div>
+
+          <div class="form-group">
+            <label>Celular</label>
+            <input type="text" id="prod-celular" placeholder="+56 9 1234 5678">
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="prod-email" placeholder="correo@ejemplo.cl">
+          </div>
+
+          <div class="form-group">
+            <label>Dirección</label>
+            <input type="text" id="prod-direccion" placeholder="Calle, número">
+          </div>
+
+          <div class="form-group">
+            <label>Región</label>
+            <select id="prod-region" onchange="poblarProvincias()">
+              <option value="">Seleccione...</option>
+              <option>Región del Maule</option>
+              <option>Región del Biobío</option>
+              <option>Región de La Araucanía</option>
+              <option>Región de O'Higgins</option>
+              <option>Región Metropolitana</option>
+              <option>Región de Valparaíso</option>
+              <option>Región de Los Lagos</option>
+              <option>Región de Los Ríos</option>
+              <option>Otra</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Comuna</label>
+            <input type="text" id="prod-comuna" placeholder="Comuna">
+          </div>
+
+          <div class="form-group">
+            <label>Especie Principal</label>
+            <select id="prod-especie">
+              <option value="">Seleccione...</option>
+              <option>Espárrago</option>
+              <option>Cereza</option>
+              <option>Kiwi</option>
+              <option>Uva</option>
+              <option>Arándano</option>
+              <option>Mora</option>
+              <option>Frambuesa</option>
+              <option>Frutilla</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Observaciones</label>
+            <input type="text" id="prod-obs" placeholder="Notas adicionales">
+          </div>
+
+          <div class="prod-btns">
+            <button class="btn btn-primary" onclick="guardarProductor()"><i class="ti ti-device-floppy"></i> Guardar</button>
+            <button class="btn btn-secondary" onclick="limpiarProductor()"><i class="ti ti-x"></i> Limpiar</button>
+          </div>
+
+          <input type="hidden" id="prod-id-edit">
+        </div>
+
+        <!-- Panel derecho: Resúmenes -->
+        <div>
+          <div class="prod-panel">
+            <div class="prod-tabs">
+              <div class="prod-itab active" onclick="showProdTab('kilos',this)">📦 Resumen Kilos</div>
+              <div class="prod-itab" onclick="showProdTab('bandejas',this)">🫙 Bandejas</div>
+              <div class="prod-itab" onclick="showProdTab('contacto',this)">📞 Contacto</div>
+            </div>
+            <div id="prod-tab-content">
+              <div class="prod-empty">Seleccione un productor para ver su resumen</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Productores -->
+      <div class="prod-lista card" style="margin-top:16px">
+        <h3>
+          <span><i class="ti ti-list"></i> Lista de Productores</span>
+          <input type="text" class="prod-search" id="prod-search-lista" placeholder="Buscar..." oninput="renderListaProd()">
+        </h3>
+        <div style="overflow-x:auto">
+          <table class="prod-table" id="prod-tabla">
+            <thead>
+              <tr>
+                <th>RUT</th>
+                <th>Nombre / Razón Social</th>
+                <th>Especie Principal</th>
+                <th>Región</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th>Kg Totales</th>
+              </tr>
+            </thead>
+            <tbody id="prod-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn btn-secondary" onclick="exportarProductores()"><i class="ti ti-file-export"></i> Exportar lista</button>
+        </div>
+      </div>
+    </div>
+
     <!-- RESUMEN DÍA -->
     <div class="module" id="mod-resumen">
       <style>
@@ -1181,12 +1358,13 @@ async function fbDel(col,fid){
 }
 
 window.addEventListener('fbReady',async()=>{
+  DATA.productores=await fbLoad('productores');
   DATA.recepciones=await fbLoad('recepciones');
   DATA.campo=await fbLoad('campo');
   DATA.devoluciones=await fbLoad('devoluciones');
   DATA.kpi=await fbLoad('kpi');
   DATA.precios=await fbLoad('precios');
-  renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();
+  renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();
   pendQueue.forEach(({col,data})=>fbSave(col,data));pendQueue=[];
 });
 
@@ -2114,6 +2292,201 @@ window.renderDashboard = function() {
   document.getElementById('dash-content').innerHTML = banner + html;
 };
 
+
+
+// ===== MÓDULO PRODUCTORES =====
+
+function formatRutProd(){
+  var el = document.getElementById('prod-rut');
+  var v = el.value.replace(/[^0-9kK]/g,'');
+  if(v.length > 1){
+    var body = v.slice(0,-1).replace(/^0+/,'');
+    var dv = v.slice(-1).toUpperCase();
+    // Limitar a 8 dígitos en el cuerpo
+    if(body.length > 8) body = body.slice(0,8);
+    el.value = body + '-' + dv;
+  } else {
+    el.value = v;
+  }
+}
+
+function validarRut(rut){
+  if(!rut) return false;
+  var clean = rut.replace(/[^0-9kK]/g,'');
+  if(clean.length < 2) return false;
+  return true;
+}
+
+function buscarProductorInput(){
+  var q = (document.getElementById('prod-buscar').value||'').toLowerCase().trim();
+  var drop = document.getElementById('drop-prod-buscar');
+  if(!q || q.length < 2){ drop.innerHTML=''; drop.style.display='none'; return; }
+  var prods = DATA.productores || [];
+  var res = prods.filter(function(p){
+    return (p.nombre||'').toLowerCase().includes(q) || (p.rut||'').toLowerCase().includes(q);
+  }).slice(0,8);
+  if(res.length===0){ drop.innerHTML=''; drop.style.display='none'; return; }
+  drop.innerHTML = res.map(function(p){
+    return '<div class="agro-opt" onclick="cargarProductorFicha(\'' + p.id + '\')">'+
+      '<b>'+(p.nombre||'')+'</b> <span style="color:#888;font-size:11px">'+p.rut+'</span></div>';
+  }).join('');
+  drop.style.display='block';
+}
+
+window.cargarProductorFicha = function(id){
+  var p = (DATA.productores||[]).find(function(x){ return x.id===id; });
+  if(!p) return;
+  document.getElementById('prod-buscar').value = p.nombre||'';
+  document.getElementById('drop-prod-buscar').style.display='none';
+  document.getElementById('prod-rut').value = p.rut||'';
+  document.getElementById('prod-nombre').value = p.nombre||'';
+  document.getElementById('prod-giro').value = p.giro||'';
+  document.getElementById('prod-telefono').value = p.telefono||'';
+  document.getElementById('prod-celular').value = p.celular||'';
+  document.getElementById('prod-email').value = p.email||'';
+  document.getElementById('prod-direccion').value = p.direccion||'';
+  document.getElementById('prod-region').value = p.region||'';
+  document.getElementById('prod-comuna').value = p.comuna||'';
+  document.getElementById('prod-especie').value = p.especie||'';
+  document.getElementById('prod-obs').value = p.obs||'';
+  document.getElementById('prod-id-edit').value = p.id||'';
+  showProdTab('kilos', document.querySelector('.prod-itab'));
+  renderProdResumen(p);
+};
+
+window.showProdTab = function(tab, el){
+  document.querySelectorAll('.prod-itab').forEach(function(b){ b.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  var id = document.getElementById('prod-id-edit').value;
+  var p = (DATA.productores||[]).find(function(x){ return x.id===id; });
+  renderProdResumen(p, tab);
+};
+
+function renderProdResumen(p, tab){
+  tab = tab || 'kilos';
+  var box = document.getElementById('prod-tab-content');
+  if(!p){ box.innerHTML='<div class="prod-empty">Seleccione un productor para ver su resumen</div>'; return; }
+
+  if(tab==='kilos'){
+    var recs = (DATA.recepciones||[]).filter(function(r){ return r.proveedor===p.nombre||r.rut===p.rut; });
+    var porEsp = {};
+    recs.forEach(function(r){ var e=r.especie||'?'; porEsp[e]=(porEsp[e]||0)+(parseFloat(r.bandejas)||0); });
+    var total = Object.values(porEsp).reduce(function(s,v){return s+v;},0);
+    var html = '<div class="prod-resumen-kg">';
+    html += '<div class="prod-kg-card" style="border-left:3px solid #1a4a2e"><div class="val">'+fmtNum(total)+' kg</div><div class="lbl">Total recepcionado</div></div>';
+    html += '<div class="prod-kg-card"><div class="val">'+recs.length+'</div><div class="lbl">N° recepciones</div></div>';
+    Object.entries(porEsp).forEach(function(e){
+      html += '<div class="prod-kg-card"><div class="val">'+fmtNum(e[1])+' kg</div><div class="lbl">'+e[0]+'</div></div>';
+    });
+    html += '</div>';
+    if(recs.length===0) html = '<div class="prod-empty">Sin recepciones registradas para este productor</div>';
+    box.innerHTML = html;
+  } else if(tab==='bandejas'){
+    var devs = (DATA.devoluciones||[]).filter(function(d){ return d.proveedor===p.nombre; });
+    var envs = (DATA.recepciones||[]).filter(function(r){ return r.proveedor===p.nombre||r.rut===p.rut; });
+    var totalEnv = envs.reduce(function(s,r){return s+(parseInt(r.bandejas)||0);},0);
+    var totalDev = devs.reduce(function(s,d){return s+(parseInt(d.cantidad)||0);},0);
+    box.innerHTML = '<div class="prod-resumen-kg">'+
+      '<div class="prod-kg-card"><div class="val">'+fmtNum(totalEnv)+'</div><div class="lbl">Envases ingresados</div></div>'+
+      '<div class="prod-kg-card"><div class="val">'+fmtNum(totalDev)+'</div><div class="lbl">Envases devueltos</div></div>'+
+      '<div class="prod-kg-card" style="border-left:3px solid #dc2626"><div class="val" style="color:#dc2626">'+fmtNum(totalEnv-totalDev)+'</div><div class="lbl">Saldo pendiente</div></div>'+
+    '</div>';
+  } else if(tab==='contacto'){
+    box.innerHTML = '<div style="font-size:13px;line-height:2;color:#333">'+
+      '<div><b>Teléfono:</b> '+(p.telefono||'—')+'</div>'+
+      '<div><b>Celular:</b> '+(p.celular||'—')+'</div>'+
+      '<div><b>Email:</b> '+(p.email||'—')+'</div>'+
+      '<div><b>Dirección:</b> '+(p.direccion||'—')+'</div>'+
+      '<div><b>Región:</b> '+(p.region||'—')+'</div>'+
+      '<div><b>Comuna:</b> '+(p.comuna||'—')+'</div>'+
+      '<div><b>Giro:</b> '+(p.giro||'—')+'</div>'+
+      '<div><b>Obs:</b> '+(p.obs||'—')+'</div>'+
+    '</div>';
+  }
+}
+
+window.guardarProductor = function(){
+  var rut = document.getElementById('prod-rut').value.trim();
+  var nombre = document.getElementById('prod-nombre').value.trim();
+  if(!rut || !nombre){ showStatus('RUT y Nombre son obligatorios'); return; }
+  if(!validarRut(rut)){ showStatus('RUT inválido'); return; }
+
+  var idEdit = document.getElementById('prod-id-edit').value;
+  var rec = {
+    id: idEdit || ('prod_'+Date.now()),
+    rut: rut,
+    nombre: nombre,
+    giro: document.getElementById('prod-giro').value.trim(),
+    telefono: document.getElementById('prod-telefono').value.trim(),
+    celular: document.getElementById('prod-celular').value.trim(),
+    email: document.getElementById('prod-email').value.trim(),
+    direccion: document.getElementById('prod-direccion').value.trim(),
+    region: document.getElementById('prod-region').value,
+    comuna: document.getElementById('prod-comuna').value.trim(),
+    especie: document.getElementById('prod-especie').value,
+    obs: document.getElementById('prod-obs').value.trim(),
+    fecha: new Date().toISOString().split('T')[0],
+  };
+
+  if(idEdit){
+    var idx = DATA.productores.findIndex(function(p){ return p.id===idEdit; });
+    if(idx>=0) DATA.productores[idx] = rec;
+  } else {
+    DATA.productores.push(rec);
+  }
+  fbSave('productores', rec);
+  renderListaProd();
+  limpiarProductor();
+  showStatus('Productor guardado ✓');
+};
+
+window.limpiarProductor = function(){
+  ['prod-buscar','prod-rut','prod-nombre','prod-giro','prod-telefono','prod-celular',
+   'prod-email','prod-direccion','prod-comuna','prod-obs','prod-id-edit'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('prod-region').value='';
+  document.getElementById('prod-especie').value='';
+  document.getElementById('prod-tab-content').innerHTML='<div class="prod-empty">Seleccione un productor para ver su resumen</div>';
+};
+
+window.renderListaProd = function(){
+  var q = (document.getElementById('prod-search-lista')?.value||'').toLowerCase();
+  var prods = (DATA.productores||[]).filter(function(p){
+    return !q || (p.nombre||'').toLowerCase().includes(q) || (p.rut||'').toLowerCase().includes(q) || (p.especie||'').toLowerCase().includes(q);
+  });
+  var tbody = document.getElementById('prod-tbody');
+  if(!tbody) return;
+  if(prods.length===0){
+    tbody.innerHTML='<tr><td colspan="7" class="prod-empty">Sin productores registrados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = prods.map(function(p){
+    var kgTotal = (DATA.recepciones||[]).filter(function(r){ return r.proveedor===p.nombre||r.rut===p.rut; })
+      .reduce(function(s,r){return s+(parseFloat(r.bandejas)||0);},0);
+    return '<tr onclick="cargarProductorFicha(\'' + p.id + '\')" title="Clic para editar">'+
+      '<td>'+p.rut+'</td>'+
+      '<td><b>'+p.nombre+'</b></td>'+
+      '<td>'+(p.especie||'—')+'</td>'+
+      '<td>'+(p.region||'—')+'</td>'+
+      '<td>'+(p.telefono||p.celular||'—')+'</td>'+
+      '<td><span class="prod-badge activo">Activo</span></td>'+
+      '<td><b>'+fmtNum(kgTotal)+' kg</b></td>'+
+    '</tr>';
+  }).join('');
+};
+
+window.exportarProductores = function(){
+  var prods = DATA.productores||[];
+  if(prods.length===0){ showStatus('Sin productores para exportar'); return; }
+  var csv = 'RUT,Nombre,Giro,Especie,Región,Comuna,Teléfono,Celular,Email\n';
+  prods.forEach(function(p){
+    csv += [p.rut,p.nombre,p.giro,p.especie,p.region,p.comuna,p.telefono,p.celular,p.email].map(function(v){ return '"'+(v||'')+'"'; }).join(',')+'\n';
+  });
+  var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download='Productores_MAFLES.csv'; a.click();
+};
 
 // ===== MÓDULO RESUMEN =====
 const ESPECIE_META = {
