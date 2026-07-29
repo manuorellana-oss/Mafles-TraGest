@@ -1387,9 +1387,14 @@ window.addEventListener('fbReady',async()=>{
   DATA.kpi=await fbLoad('kpi');
   DATA.precios=await fbLoad('precios');
   renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();
-  // Activar tab Resumen por defecto
+  // Activar módulo Resumen por defecto
+  document.querySelectorAll('.module').forEach(function(m){m.classList.remove('active');});
+  document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.remove('active');});
+  var modResumen = document.getElementById('mod-resumen');
+  if(modResumen) modResumen.classList.add('active');
   var tabResumen = document.querySelector('[data-mod="resumen"]');
-  if(tabResumen) tabResumen.click();
+  if(tabResumen) tabResumen.classList.add('active');
+  initResumen();
   pendQueue.forEach(({col,data})=>fbSave(col,data));pendQueue=[];
 });
 
