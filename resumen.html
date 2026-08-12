@@ -377,6 +377,14 @@ window._doc = doc;
 window._doc = doc;
 window._fbReady = true;
 
+window.fbLoad = async function(col){
+  try{
+    const q = window._query(window._col(window._db, col), window._orderBy('_ts','asc'));
+    const snap = await window._getDocs(q);
+    return snap.docs.map(d => ({...d.data(), _fid: d.id}));
+  } catch(e){ console.error('fbLoad error '+col+':', e); return []; }
+};
+
 window.dispatchEvent(new Event('fbReady'));
 </script>
 
