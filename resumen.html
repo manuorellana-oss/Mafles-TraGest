@@ -512,21 +512,26 @@ window.calcPV = function(){
 };
 
 // INIT
-window.addEventListener('fbReady', async function(){
-  DATA.recepciones = await fbLoad('recepciones');
-  DATA.campo = await fbLoad('campo');
-  DATA.kpi = await fbLoad('kpi');
-  document.getElementById('loading-box').style.display='none';
-
-  // Setear fecha de ayer por defecto
-  var hoy = new Date(); hoy.setHours(0,0,0,0);
-  var ayer = new Date(hoy); ayer.setDate(hoy.getDate()-1);
-  var dd = String(ayer.getDate()).padStart(2,'0');
-  var mm = String(ayer.getMonth()+1).padStart(2,'0');
-  document.getElementById('dash-fecha').value = ayer.getFullYear()+'-'+mm+'-'+dd;
-
-  renderDash();
-});
+async function iniciarApp(){
+  try {
+    DATA.recepciones = await fbLoad("recepciones");
+    DATA.campo = await fbLoad("campo");
+    DATA.kpi = await fbLoad("kpi");
+    document.getElementById("loading-box").style.display="none";
+    var hoy = new Date(); hoy.setHours(0,0,0,0);
+    var ayer = new Date(hoy); ayer.setDate(hoy.getDate()-1);
+    var dd = String(ayer.getDate()).padStart(2,"0");
+    var mm = String(ayer.getMonth()+1).padStart(2,"0");
+    document.getElementById("dash-fecha").value = ayer.getFullYear()+"-"+mm+"-"+dd;
+    renderDash();
+    var primerTab = document.querySelector(".calc-tab.active");
+    if(primerTab) selCalcEsp("Espárrago", primerTab);
+  } catch(e) {
+    document.getElementById("loading-box").innerHTML = "<div style='color:#dc2626;padding:20px'>Error cargando. Intenta de nuevo.</div>";
+  }
+}
+window.addEventListener("fbReady", iniciarApp);
+setTimeout(function(){ if(DATA.recepciones.length===0) iniciarApp(); }, 4000);
 </script>
 </body>
 </html>
