@@ -105,7 +105,7 @@
 <div class="fbar">
   <label>📅</label>
   <input type="date" id="dash-fecha">
-  <select id="dash-esp">
+  <select id="dash-esp" onchange="renderKpiApp()">
     <option value="">Todas</option>
     <option value="Espárrago">Espárrago</option>
     <option value="Cereza">Cereza</option>
@@ -345,6 +345,14 @@ window.addEventListener('fbReady', async function(){
   var mm=String(ayer.getMonth()+1).padStart(2,'0');
   document.getElementById('dash-fecha').value=ayer.getFullYear()+'-'+mm+'-'+dd;
   renderKpiApp();
+  // Actualizar calculadora con datos cargados
+  ['Espárrago','Cereza','Kiwi','Uva'].forEach(function(esp){
+    var kpisEsp = DATA.kpi.filter(function(k){ return k.especie===esp; });
+    if(kpisEsp.length>0){
+      var tab = document.querySelector('.calc-tab[onclick*="'+esp+'"]');
+      if(tab && tab.classList.contains('active')) selCalcEsp(esp, tab);
+    }
+  });
   var primerTab=document.querySelector('.calc-tab.active');
   if(primerTab) selCalcEsp('Espárrago',primerTab);
 });
