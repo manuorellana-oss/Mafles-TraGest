@@ -3724,6 +3724,8 @@ window.addEventListener('fbReady',async()=>{
   renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();
   // Poblar datos de Resumen sin forzar el cambio de pestaña (evita sacar al usuario de donde esté navegando)
   initResumen();
+  // Esperar también a que las fuentes/íconos terminen de cargar, para que la pantalla no se mueva justo cuando el usuario recién puede hacer clic
+  try{ if(document.fonts && document.fonts.ready){ await document.fonts.ready; } }catch(e){}
   window._dataReady = true;
   var loadOverlay = document.getElementById('data-loading-overlay');
   if(loadOverlay) loadOverlay.style.display='none';
