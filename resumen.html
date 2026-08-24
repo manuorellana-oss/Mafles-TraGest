@@ -240,7 +240,13 @@ window.renderKpiApp = function(){
     var meta=ESPECIE_META[esp]; if(!meta) return;
     var recEsp=recs.filter(function(r){return r.especie===esp;});
     var kpiEsp=kpis.filter(function(k){return k.especie===esp;});
-    if(recEsp.length===0&&kpiEsp.length===0) return;
+    if(recEsp.length===0&&kpiEsp.length===0){
+      html+='<div class="esp-card" style="border-top:4px solid '+meta.color+'55;opacity:.55">'+
+        '<div class="esp-head"><div class="esp-emoji">'+meta.emoji+'</div><div><div class="esp-nombre">'+esp+'</div>'+(meta.proceso?'<span class="esp-proceso">⚙️ '+meta.proceso+'</span>':'')+' </div></div>'+
+        '<div class="esp-body"><div class="empty" style="padding:18px 8px">📭 Sin actividad</div></div>'+
+      '</div>';
+      return;
+    }
     var totalKgEsp=recEsp.reduce(function(s,r){return s+(parseFloat(r.bandejas)||0);},0);
     var rechEsp=recEsp.filter(function(r){return(r.evaluacion||'').match(/rechazo/i);});
     var kgRechEsp=rechEsp.reduce(function(s,r){return s+(parseFloat(r.bandejas)||0);},0);
