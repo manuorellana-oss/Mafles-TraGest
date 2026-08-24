@@ -1108,6 +1108,7 @@ tr:hover td{background:#f8fcf8}
             <div><img id="qr-canvas" width="180" height="180" style="border-radius:8px;display:block;margin:0 auto;border:3px solid #d0e8d0;background:#f5f5f5" alt="Generando QR...">
               <div class="btn-row" style="justify-content:center;margin-top:.8rem">
                 <button class="btn btn-secondary" style="font-size:12px" onclick="descargarQR()"><i class="ti ti-download"></i> Descargar QR</button>
+                <button class="btn btn-secondary" style="font-size:12px" onclick="imprimirQR()"><i class="ti ti-printer"></i> Imprimir</button>
               </div>
             </div>
             <div class="qr-ficha" id="qr-ficha"></div>
@@ -1146,6 +1147,7 @@ tr:hover td{background:#f8fcf8}
                 <img id="vis-canvas" width="200" height="200" style="border-radius:8px;display:block;margin:0 auto;border:3px solid #d0e8d0;background:#f5f5f5" alt="QR">
                 <div style="text-align:center;margin-top:8px">
                   <button class="btn btn-secondary" style="font-size:11px" onclick="descargarVisQR()"><i class="ti ti-download"></i> Descargar</button>
+                  <button class="btn btn-secondary" style="font-size:11px" onclick="imprimirVisQR()"><i class="ti ti-printer"></i> Imprimir</button>
                 </div>
               </div>
               <div class="qr-ficha" id="vis-ficha"></div>
@@ -5329,13 +5331,59 @@ window.genQR=function(id){
 window.descargarQR=function(){
   var img=document.getElementById('qr-canvas');
   if(!img||!img.src){alert('Primero genera el QR');return;}
-  window.open(img.src,'_blank');
+  var a=document.createElement('a');
+  a.href=img.src;
+  a.download='QR-TraGest.gif';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+window.imprimirQR=function(){
+  var img=document.getElementById('qr-canvas');
+  var ficha=document.getElementById('qr-ficha');
+  if(!img||!img.src){alert('Primero genera el QR');return;}
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>Ficha de Trazabilidad</title><style>'
+    +'body{font-family:Arial,sans-serif;padding:24px;color:#1a2b20}'
+    +'.wrap{display:flex;gap:24px;align-items:flex-start;max-width:700px;margin:0 auto}'
+    +'img{width:220px;height:220px;border:3px solid #d0e8d0;border-radius:8px}'
+    +'.ficha strong{color:#1a4a2e}'
+    +'.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}'
+    +'.badge-green{background:#d4edda}.badge-blue{background:#d6e9f8}.badge-amber{background:#fdf1cc}.badge-red{background:#fbd7d7}'
+    +'@media print{body{padding:0}}'
+    +'</style></head><body><div class="wrap"><img src="'+img.src+'"><div class="ficha">'+ficha.innerHTML+'</div></div></body></html>');
+  w.document.close();
+  w.onload=function(){ w.focus(); w.print(); };
 }
 
 window.descargarVisQR=function(){
   var img=document.getElementById('vis-canvas');
   if(!img||!img.src){alert('Primero abre una ficha');return;}
-  window.open(img.src,'_blank');
+  var a=document.createElement('a');
+  a.href=img.src;
+  a.download='QR-TraGest.gif';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+window.imprimirVisQR=function(){
+  var img=document.getElementById('vis-canvas');
+  var ficha=document.getElementById('vis-ficha');
+  if(!img||!img.src){alert('Primero abre una ficha');return;}
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>Ficha de Trazabilidad</title><style>'
+    +'body{font-family:Arial,sans-serif;padding:24px;color:#1a2b20}'
+    +'.wrap{display:flex;gap:24px;align-items:flex-start;max-width:700px;margin:0 auto}'
+    +'img{width:220px;height:220px;border:3px solid #d0e8d0;border-radius:8px}'
+    +'.ficha strong{color:#1a4a2e}'
+    +'.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}'
+    +'.badge-green{background:#d4edda}.badge-blue{background:#d6e9f8}.badge-amber{background:#fdf1cc}.badge-red{background:#fbd7d7}'
+    +'@media print{body{padding:0}}'
+    +'</style></head><body><div class="wrap"><img src="'+img.src+'"><div class="ficha">'+ficha.innerHTML+'</div></div></body></html>');
+  w.document.close();
+  w.onload=function(){ w.focus(); w.print(); };
 }
 
 window.showQrTab=function(tab){
