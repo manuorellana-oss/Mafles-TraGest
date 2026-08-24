@@ -152,7 +152,11 @@
 <script>
 var DATA = { recepciones:[], campo:[], kpi:[] };
 var calcCDU = 0;
-var ESPECIES_PROCESO = ['Espárrago','Esparrago','Cereza','Kiwi','Uva'];
+var ESPECIES_PROCESO = ['Espárrago','Cereza','Kiwi','Uva'];
+
+// Normaliza nombres de especie que llegan sin tilde desde otros módulos del sistema
+var ESPECIE_ALIAS = { 'Esparrago':'Espárrago', 'Arandano':'Arándano' };
+function normEspecie(e){ return ESPECIE_ALIAS[e] || e; }
 
 function parsePesos(v){ return parseFloat((v||'0').toString().replace(/[$,.]/g,''))||0; }
 function getColorRend(r){ return parseFloat(r)>=90?'#16a34a':parseFloat(r)>=80?'#f59e0b':'#dc2626'; }
@@ -181,12 +185,10 @@ const SVG_ICONS = {
 function svgIcon(key, size) { size=size||24; return '<img src="'+SVG_ICONS[key]+'" style="width:'+size+'px;height:'+size+'px;vertical-align:middle;margin-right:4px">'; }
 
 const ESPECIE_META = {
-  'Esparrago':  {emoji:svgIcon('esparrago'), color:'#2e7d52', proceso:'Seleccion / Calibracion', tieneProc:true},
   'Espárrago':  {emoji:svgIcon('esparrago'), color:'#2e7d52', proceso:'Selección / Calibración', tieneProc:true},
   'Cereza':     {emoji:'🍒', color:'#dc2626', proceso:'Selección',               tieneProc:true},
   'Kiwi':       {emoji:'🥝', color:'#65a30d', proceso:'Pelado',                  tieneProc:true},
   'Uva':        {emoji:'🍇', color:'#7c3aed', proceso:'Desgrane',                tieneProc:true},
-  'Arandano':   {emoji:'🫐', color:'#2563eb', proceso:null, tieneProc:false},
   'Arándano':   {emoji:'🫐', color:'#2563eb', proceso:null, tieneProc:false},
   'Mora':       {emoji:svgIcon('mora'), color:'#374151', proceso:null, tieneProc:false},
   'Frambuesa':  {emoji:svgIcon('frambuesa'), color:'#e11d48', proceso:null, tieneProc:false},
@@ -341,9 +343,9 @@ window.calcPV=function(){
 
 // ✅ LISTENER REGISTRADO ANTES DE QUE FIREBASE DISPARE fbReady
 window.addEventListener('fbReady', async function(){
-  DATA.recepciones = await fbLoad('recepciones');
-  DATA.campo       = await fbLoad('campo');
-  DATA.kpi         = await fbLoad('kpi');
+  DATA.recepciones = (await fbLoad('recepciones')).map(function(r){ r.especie = normEspecie(r.especie); return r; });
+  DATA.campo       = (await fbLoad('campo')).map(function(r){ r.especie = normEspecie(r.especie); return r; });
+  DATA.kpi         = (await fbLoad('kpi')).map(function(r){ r.especie = normEspecie(r.especie); return r; });
   document.getElementById('loading-box').style.display='none';
   var hoy=new Date(); hoy.setHours(0,0,0,0);
   var ayer=new Date(hoy); ayer.setDate(hoy.getDate()-1);
