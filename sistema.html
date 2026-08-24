@@ -1375,9 +1375,8 @@ window.addEventListener('fbReady',async()=>{
   DATA.kpi=await fbLoad('kpi');
   DATA.precios=await fbLoad('precios');
   renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();
-  // Activar tab Resumen por defecto
-  var tabResumen = document.querySelector('[data-mod="resumen"]');
-  if(tabResumen) tabResumen.click();
+  // Poblar datos de Resumen sin forzar el cambio de pestaña (evita sacar al usuario de donde esté navegando)
+  initResumen();
   pendQueue.forEach(({col,data})=>fbSave(col,data));pendQueue=[];
 });
 
