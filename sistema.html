@@ -194,6 +194,13 @@ tr:hover td{background:#f8fcf8}
     <div style="width:40px;height:40px;border:4px solid #d8e6dc;border-top-color:#1a4a2e;border-radius:50%;animation:tg-spin 0.8s linear infinite"></div>
     <div style="color:#1a4a2e;font-weight:600;font-size:14px">Cargando datos, un momento...</div>
   </div>
+  <div id="backup-reminder" style="display:none;background:#fdf1cc;color:#7a5a00;padding:10px 20px;font-size:13px;display:none;align-items:center;justify-content:space-between">
+    <span>📦 Han pasado más de 7 días desde tu último respaldo. Te recomendamos generar uno nuevo.</span>
+    <span>
+      <button class="btn btn-secondary" style="font-size:12px;margin-right:8px" onclick="generarRespaldo()">Respaldar ahora</button>
+      <button class="btn btn-secondary" style="font-size:12px" onclick="document.getElementById('backup-reminder').style.display='none'">Cerrar</button>
+    </span>
+  </div>
   <style>@keyframes tg-spin{to{transform:rotate(360deg)}}</style>
   <script>
     // Seguridad: si por cualquier motivo los datos no cargan, no dejar al usuario bloqueado para siempre
@@ -214,6 +221,7 @@ tr:hover td{background:#f8fcf8}
     <div class="tb-right">
       <span class="tb-user" id="tb-username">Manuel Orellana</span>
       <span class="tb-role" id="tb-rolname">Gerencial</span>
+      <button class="btn-logout" style="background:#e8f5e9;color:#1a4a2e;margin-right:6px" onclick="generarRespaldo()"><i class="ti ti-download" style="font-size:13px"></i> Respaldo</button>
       <button class="btn-logout" onclick="doLogout()"><i class="ti ti-logout" style="font-size:13px"></i> Salir</button>
     </div>
   </div>
@@ -3730,7 +3738,46 @@ window.addEventListener('fbReady',async()=>{
   var loadOverlay = document.getElementById('data-loading-overlay');
   if(loadOverlay) loadOverlay.style.display='none';
   pendQueue.forEach(({col,data})=>fbSave(col,data));pendQueue=[];
+  chequearRecordatorioRespaldo();
 });
+
+window.generarRespaldo=function(){
+  var respaldo = {
+    generado: new Date().toISOString(),
+    sistema: 'TraGest v8.0',
+    productores: DATA.productores,
+    recepciones: DATA.recepciones,
+    campo: DATA.campo,
+    devoluciones: DATA.devoluciones,
+    kpi: DATA.kpi,
+    precios: DATA.precios
+  };
+  var json = JSON.stringify(respaldo, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var fecha = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = 'Respaldo-TraGest-'+fecha+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  localStorage.setItem('tragest_ultimo_respaldo', Date.now().toString());
+  var reminder = document.getElementById('backup-reminder');
+  if(reminder) reminder.style.display='none';
+  alert('Respaldo generado y descargado correctamente. Guárdalo en un lugar seguro (Google Drive, por ejemplo).');
+}
+
+function chequearRecordatorioRespaldo(){
+  var ultimo = localStorage.getItem('tragest_ultimo_respaldo');
+  var seteDias = 7*24*60*60*1000;
+  var reminder = document.getElementById('backup-reminder');
+  if(!reminder) return;
+  if(!ultimo || (Date.now() - parseInt(ultimo)) > seteDias){
+    reminder.style.display = 'flex';
+  }
+}
 
 // ===== LOGIN =====
 window.rolSelLogin='operativo';
