@@ -222,9 +222,9 @@ tr:hover td{background:#f8fcf8}
     <div class="tb-right">
       <span class="tb-user" id="tb-username">Manuel Orellana</span>
       <span class="tb-role" id="tb-rolname">Gerencial</span>
-      <span id="drive-status" style="font-size:11px;color:#aaa;margin-right:8px"></span>
-      <button class="btn-logout" id="btn-drive-connect" style="background:#e8f0fe;color:#1a56c4;margin-right:6px" onclick="conectarDrive()"><i class="ti ti-brand-google-drive" style="font-size:13px"></i> Conectar Drive</button>
-      <button class="btn-logout" style="background:#e8f5e9;color:#1a4a2e;margin-right:6px" onclick="generarRespaldo()"><i class="ti ti-download" style="font-size:13px"></i> Respaldo</button>
+      <span id="drive-status" style="display:none;font-size:11px;color:#aaa;margin-right:8px"></span>
+      <button class="btn-logout" id="btn-drive-connect" style="display:none;background:#e8f0fe;color:#1a56c4;margin-right:6px" onclick="conectarDrive()"><i class="ti ti-brand-google-drive" style="font-size:13px"></i> Conectar Drive</button>
+      <button class="btn-logout" id="btn-respaldo" style="display:none;background:#e8f5e9;color:#1a4a2e;margin-right:6px" onclick="generarRespaldo()"><i class="ti ti-download" style="font-size:13px"></i> Respaldo</button>
       <button class="btn-logout" onclick="doLogout()"><i class="ti ti-logout" style="font-size:13px"></i> Salir</button>
     </div>
   </div>
@@ -3741,7 +3741,7 @@ window.addEventListener('fbReady',async()=>{
   var loadOverlay = document.getElementById('data-loading-overlay');
   if(loadOverlay) loadOverlay.style.display='none';
   pendQueue.forEach(({col,data})=>fbSave(col,data));pendQueue=[];
-  chequearRecordatorioRespaldo();
+  esperarGoogleYRespaldar();
 });
 
 // ===== Integración con Google Drive =====
@@ -3775,6 +3775,17 @@ function initDriveClient(){
   });
 }
 window.addEventListener('load', function(){ setTimeout(initDriveClient, 500); });
+
+function esperarGoogleYRespaldar(intentos){
+  intentos = intentos || 0;
+  if(window.google && google.accounts && google.accounts.oauth2){
+    if(!_driveTokenClient){ initDriveClient(); }
+    intentarRespaldoAutomatico();
+    return;
+  }
+  if(intentos > 10){ chequearRecordatorioRespaldo(); return; } // ~5s de espera máxima, luego solo mostramos el aviso manual
+  setTimeout(function(){ esperarGoogleYRespaldar(intentos+1); }, 500);
+}
 
 window.conectarDrive = function(){
   if(!_driveTokenClient){ initDriveClient(); }
@@ -3881,12 +3892,88 @@ window.generarRespaldo=async function(){
   }
 }
 
+async function generarRespaldoSilencioso(){
+  // Genera el respaldo y lo sube a Drive SIN descargar localmente ni interrumpir con ventanas
+  var respaldo = {
+    generado: new Date().toISOString(),
+    sistema: 'TraGest v8.0',
+    productores: DATA.productores,
+    recepciones: DATA.recepciones,
+    campo: DATA.campo,
+    devoluciones: DATA.devoluciones,
+    kpi: DATA.kpi,
+    precios: DATA.precios
+  };
+  var json = JSON.stringify(respaldo, null, 2);
+  var fecha = new Date().toISOString().slice(0,10);
+  var filename = 'Respaldo-TraGest-'+fecha+'.json';
+  var subida = await subirRespaldoADrive(json, filename);
+  if(subida.ok){
+    localStorage.setItem('tragest_ultimo_respaldo', Date.now().toString());
+    var reminder = document.getElementById('backup-reminder');
+    if(reminder) reminder.style.display='none';
+    mostrarAvisoRespaldoAuto('✅ Respaldo automático subido a tu Drive ('+new Date().toLocaleString('es-CL')+').');
+  }
+  return subida;
+}
+
+function mostrarAvisoRespaldoAuto(msg){
+  var reminder = document.getElementById('backup-reminder');
+  if(!reminder) return;
+  reminder.style.background = '#e8f5e9';
+  reminder.style.color = '#1a4a2e';
+  reminder.querySelector('span').textContent = msg;
+  var btnRow = reminder.querySelectorAll('span')[1];
+  if(btnRow) btnRow.style.display = 'none';
+  reminder.style.display = 'flex';
+  setTimeout(function(){ reminder.style.display = 'none'; if(btnRow) btnRow.style.display=''; reminder.style.background='#fdf1cc'; reminder.style.color='#7a5a00'; }, 6000);
+}
+
+async function intentarRespaldoAutomatico(){
+  if(!window._esAdmin) return; // Solo el administrador gestiona el respaldo a Drive
+  var ultimo = localStorage.getItem('tragest_ultimo_respaldo');
+  var seteDias = 7*24*60*60*1000;
+  var yaToca = !ultimo || (Date.now() - parseInt(ultimo)) > seteDias;
+  if(!yaToca) return;
+
+  if(!_driveTokenClient){ initDriveClient(); }
+  if(!_driveTokenClient){ chequearRecordatorioRespaldo(); return; }
+
+  // Guardamos un callback especial temporal para el intento silencioso
+  var originalCallback = _driveTokenClient.callback;
+  var manejado = false;
+  _driveTokenClient.callback = async function(resp){
+    manejado = true;
+    if(resp.error){
+      // No se pudo renovar en silencio: pedimos que el usuario reconecte manualmente
+      actualizarEstadoDrive('', false);
+      chequearRecordatorioRespaldo();
+      return;
+    }
+    _driveToken = resp.access_token;
+    actualizarEstadoDrive('', true);
+    await asegurarCarpetaDrive();
+    await generarRespaldoSilencioso();
+  };
+  try{
+    _driveTokenClient.requestAccessToken({prompt:''});
+  }catch(e){
+    chequearRecordatorioRespaldo();
+  }
+  // Si Google no responde en unos segundos (bloqueado, sin sesión, etc.), volvemos al aviso manual
+  setTimeout(function(){
+    if(!manejado){ chequearRecordatorioRespaldo(); }
+  }, 4000);
+}
+
 function chequearRecordatorioRespaldo(){
+  if(!window._esAdmin) return;
   var ultimo = localStorage.getItem('tragest_ultimo_respaldo');
   var seteDias = 7*24*60*60*1000;
   var reminder = document.getElementById('backup-reminder');
   if(!reminder) return;
   if(!ultimo || (Date.now() - parseInt(ultimo)) > seteDias){
+    reminder.querySelector('span').textContent = '📦 Han pasado más de 7 días desde tu último respaldo. Conecta Drive de nuevo para que se suba automáticamente.';
     reminder.style.display = 'flex';
   }
 }
@@ -3917,9 +4004,23 @@ window.doLogin=function(){
 }
 function activarSesion(u,ud){
   rolActual=ud.rol;
+  window._esAdmin = !!ud.admin;
   document.getElementById('tb-username').textContent=ud.nombre;
   document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':'Operativo';
   if(ud.rol==='gerencial') document.getElementById('tab-precio').classList.remove('hidden-tab');
+  // El respaldo a Drive queda disponible solo para el administrador (cuenta personal vinculada)
+  var btnDrive = document.getElementById('btn-drive-connect');
+  var btnRespaldo = document.getElementById('btn-respaldo');
+  var driveStatus = document.getElementById('drive-status');
+  if(window._esAdmin){
+    if(btnDrive) btnDrive.style.display='';
+    if(btnRespaldo) btnRespaldo.style.display='';
+    if(driveStatus) driveStatus.style.display='';
+  } else {
+    if(btnDrive) btnDrive.style.display='none';
+    if(btnRespaldo) btnRespaldo.style.display='none';
+    if(driveStatus) driveStatus.style.display='none';
+  }
   document.getElementById('portal').style.display='none';
   document.getElementById('app').style.display='flex';
   // sessionStorage desactivado
