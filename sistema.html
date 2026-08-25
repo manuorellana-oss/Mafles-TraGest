@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f0;color:#222;min-height:100vh}
@@ -221,6 +222,8 @@ tr:hover td{background:#f8fcf8}
     <div class="tb-right">
       <span class="tb-user" id="tb-username">Manuel Orellana</span>
       <span class="tb-role" id="tb-rolname">Gerencial</span>
+      <span id="drive-status" style="font-size:11px;color:#aaa;margin-right:8px"></span>
+      <button class="btn-logout" id="btn-drive-connect" style="background:#e8f0fe;color:#1a56c4;margin-right:6px" onclick="conectarDrive()"><i class="ti ti-brand-google-drive" style="font-size:13px"></i> Conectar Drive</button>
       <button class="btn-logout" style="background:#e8f5e9;color:#1a4a2e;margin-right:6px" onclick="generarRespaldo()"><i class="ti ti-download" style="font-size:13px"></i> Respaldo</button>
       <button class="btn-logout" onclick="doLogout()"><i class="ti ti-logout" style="font-size:13px"></i> Salir</button>
     </div>
@@ -3741,7 +3744,104 @@ window.addEventListener('fbReady',async()=>{
   chequearRecordatorioRespaldo();
 });
 
-window.generarRespaldo=function(){
+// ===== Integración con Google Drive =====
+var DRIVE_CLIENT_ID = '252537529676-3vp66ffug50g9gumpn2rl2v7sl2kfjlj.apps.googleusercontent.com';
+var DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+var _driveToken = null;
+var _driveTokenClient = null;
+var _driveFolderId = localStorage.getItem('tragest_drive_folder_id') || null;
+
+function actualizarEstadoDrive(msg, conectado){
+  var el = document.getElementById('drive-status');
+  var btn = document.getElementById('btn-drive-connect');
+  if(el) el.textContent = msg || '';
+  if(btn) btn.innerHTML = conectado
+    ? '<i class="ti ti-circle-check" style="font-size:13px"></i> Drive conectado'
+    : '<i class="ti ti-brand-google-drive" style="font-size:13px"></i> Conectar Drive';
+}
+
+function initDriveClient(){
+  if(!window.google || !google.accounts || !google.accounts.oauth2){ return; }
+  _driveTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: DRIVE_CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: async function(resp){
+      if(resp.error){ actualizarEstadoDrive('Error al conectar con Drive', false); return; }
+      _driveToken = resp.access_token;
+      actualizarEstadoDrive('', true);
+      await asegurarCarpetaDrive();
+      alert('¡Listo! Tu cuenta de Drive quedó conectada para esta sesión. Ahora, cada vez que generes un respaldo, también se subirá automáticamente a tu Drive.');
+    }
+  });
+}
+window.addEventListener('load', function(){ setTimeout(initDriveClient, 500); });
+
+window.conectarDrive = function(){
+  if(!_driveTokenClient){ initDriveClient(); }
+  if(!_driveTokenClient){ alert('La librería de Google todavía está cargando, espera un segundo e intenta de nuevo.'); return; }
+  _driveTokenClient.requestAccessToken({prompt:'consent'});
+}
+
+async function asegurarCarpetaDrive(){
+  if(_driveFolderId) return _driveFolderId;
+  try{
+    var q = encodeURIComponent("name='TraGest Respaldos' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+    var res = await fetch('https://www.googleapis.com/drive/v3/files?q='+q+'&fields=files(id,name)', {
+      headers: { 'Authorization': 'Bearer '+_driveToken }
+    });
+    var data = await res.json();
+    if(data.files && data.files.length>0){
+      _driveFolderId = data.files[0].id;
+    } else {
+      var createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer '+_driveToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'TraGest Respaldos', mimeType: 'application/vnd.google-apps.folder' })
+      });
+      var created = await createRes.json();
+      _driveFolderId = created.id;
+    }
+    localStorage.setItem('tragest_drive_folder_id', _driveFolderId);
+    return _driveFolderId;
+  }catch(e){
+    console.warn('No se pudo crear/ubicar la carpeta de Drive:', e);
+    return null;
+  }
+}
+
+async function subirRespaldoADrive(json, filename){
+  if(!_driveToken){ return {ok:false, motivo:'no_conectado'}; }
+  try{
+    var folderId = await asegurarCarpetaDrive();
+    var metadata = { name: filename, mimeType: 'application/json' };
+    if(folderId) metadata.parents = [folderId];
+    var boundary = '-------tragest_boundary_'+Date.now();
+    var body =
+      '--'+boundary+'\r\n'+
+      'Content-Type: application/json; charset=UTF-8\r\n\r\n'+
+      JSON.stringify(metadata)+'\r\n'+
+      '--'+boundary+'\r\n'+
+      'Content-Type: application/json\r\n\r\n'+
+      json+'\r\n'+
+      '--'+boundary+'--';
+    var res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer '+_driveToken, 'Content-Type': 'multipart/related; boundary='+boundary },
+      body: body
+    });
+    if(!res.ok){
+      var errText = await res.text();
+      console.warn('Error subiendo a Drive:', errText);
+      return {ok:false, motivo:'error_subida'};
+    }
+    return {ok:true};
+  }catch(e){
+    console.warn('Error subiendo a Drive:', e);
+    return {ok:false, motivo:'excepcion'};
+  }
+}
+
+window.generarRespaldo=async function(){
   var respaldo = {
     generado: new Date().toISOString(),
     sistema: 'TraGest v8.0',
@@ -3753,12 +3853,14 @@ window.generarRespaldo=function(){
     precios: DATA.precios
   };
   var json = JSON.stringify(respaldo, null, 2);
+  var fecha = new Date().toISOString().slice(0,10);
+  var filename = 'Respaldo-TraGest-'+fecha+'.json';
+
   var blob = new Blob([json], {type:'application/json'});
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
-  var fecha = new Date().toISOString().slice(0,10);
   a.href = url;
-  a.download = 'Respaldo-TraGest-'+fecha+'.json';
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -3766,7 +3868,17 @@ window.generarRespaldo=function(){
   localStorage.setItem('tragest_ultimo_respaldo', Date.now().toString());
   var reminder = document.getElementById('backup-reminder');
   if(reminder) reminder.style.display='none';
-  alert('Respaldo generado y descargado correctamente. Guárdalo en un lugar seguro (Google Drive, por ejemplo).');
+
+  if(_driveToken){
+    var subida = await subirRespaldoADrive(json, filename);
+    if(subida.ok){
+      alert('Respaldo descargado y subido a tu carpeta "TraGest Respaldos" en Google Drive correctamente.');
+    } else {
+      alert('Respaldo descargado localmente. No se pudo subir a Drive (puede que la conexión haya expirado) — intenta "Conectar Drive" de nuevo.');
+    }
+  } else {
+    alert('Respaldo generado y descargado correctamente. Conecta tu Drive (botón arriba) para que también se suba automáticamente la próxima vez.');
+  }
 }
 
 function chequearRecordatorioRespaldo(){
