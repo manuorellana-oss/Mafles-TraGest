@@ -3573,6 +3573,7 @@ var qrcode = function() {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, setDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const cfg = {
   apiKey:"AIzaSyClBEniGH5SaGCZQ6w_IXi2NQ_uCO329JM",
@@ -3584,7 +3585,11 @@ const cfg = {
 };
 const app = initializeApp(cfg);
 const db = getFirestore(app);
+const auth = getAuth(app);
 window._db = db;
+window._auth = auth;
+window._signInWithEmailAndPassword = signInWithEmailAndPassword;
+window._signOut = signOut;
 window._col = collection;
 window._addDoc = addDoc;
 window._setDoc = setDoc;
@@ -3596,19 +3601,34 @@ window._doc = doc;
 window._doc = doc;
 window._fbReady = true;
 
+// Si ya hay una sesión de Firebase activa (recarga de página), reingresar automáticamente
+// sin mostrar el portal de login de nuevo.
+onAuthStateChanged(auth, (user)=>{
+  if(user && window._pendingAutoLogin!==false){
+    const email = (user.email||'').toLowerCase();
+    const ud = window.USUARIOS && window.USUARIOS[email];
+    if(ud && typeof window._activarSesion==='function'){
+      window._activarSesion(email, ud);
+    }
+  }
+});
+
 window.dispatchEvent(new Event('fbReady'));
 </script>
 
 <script>
 // ===== USUARIOS =====
+// Las contraseñas ya NO viven aquí: se validan contra Firebase Authentication.
+// Este mapa solo asocia el correo autenticado con su nombre y rol dentro del sistema.
 let USUARIOS = {
-  'manu':      {pass:'admin2026',    rol:'gerencial', admin:true,  nombre:'Manuel Orellana'},
-  'sebastian': {pass:'gerencia2026', rol:'gerencial', admin:false, nombre:'Sebastian Arauna'},
-  'katia':     {pass:'katia2026',    rol:'gerencial', admin:false, nombre:'Katia Meza'},
-  'sandra':    {pass:'sandra2026',   rol:'gerencial', admin:false, nombre:'Sandra Arauna'},
-  'keren':     {pass:'keren2026',    rol:'gerencial', admin:false, nombre:'Keren Arauna'},
-  'aida':      {pass:'proceso2026',  rol:'proceso',   admin:false, nombre:'Aida Reyes'}
+  'manuorellana@gmail.com': {rol:'gerencial', admin:true,  nombre:'Manuel Orellana'},
+  's.arauna@mafles.cl':     {rol:'gerencial', admin:false, nombre:'Sebastian Arauna'},
+  'k.meza@mafles.cl':       {rol:'gerencial', admin:false, nombre:'Katia Meza'},
+  'sn.arauna@mafles.cl':    {rol:'gerencial', admin:false, nombre:'Sandra Arauna'},
+  'kn.arauna@mafles.cl':    {rol:'gerencial', admin:false, nombre:'Keren Arauna'},
+  'a.reyes@mafles.cl':      {rol:'proceso',   admin:false, nombre:'Aida Reyes'}
 };
+window.USUARIOS = USUARIOS;
 let rolActual = '';
 window._usuarioActual = '';
 let pendQueue = [];
@@ -4064,11 +4084,31 @@ window.doLogin=function(){
   var u=document.getElementById('p-user').value.trim().toLowerCase();
   var p=document.getElementById('p-pass').value;
   var err=document.getElementById('p-err');
+  var btn=document.querySelector('.btn-login');
   if(!u||!p){err.style.display='block';return;}
-  var ud=USUARIOS[u];
-  if(!ud||ud.pass!==p){err.style.display='block';return;}
+  if(!window._auth||!window._signInWithEmailAndPassword){
+    err.textContent='Sistema de acceso aún cargando, intenta de nuevo en unos segundos.';
+    err.style.display='block';
+    return;
+  }
   err.style.display='none';
-  activarSesion(u,ud);
+  if(btn){btn.disabled=true;btn.textContent='Ingresando...';}
+  window._signInWithEmailAndPassword(window._auth,u,p).then(function(cred){
+    var ud=USUARIOS[u];
+    if(!ud){
+      // Cuenta válida en Firebase pero no autorizada dentro de TraGest
+      window._signOut(window._auth);
+      err.textContent='Este usuario no tiene acceso habilitado en TraGest.';
+      err.style.display='block';
+      if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Ingresar al sistema';}
+      return;
+    }
+    activarSesion(u,ud);
+  }).catch(function(){
+    err.textContent='Usuario o contraseña incorrectos.';
+    err.style.display='block';
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Ingresar al sistema';}
+  });
 }
 function activarSesion(u,ud){
   rolActual=ud.rol;
@@ -4110,26 +4150,17 @@ function activarSesion(u,ud){
   document.getElementById('app').style.display='flex';
   // sessionStorage desactivado
 }
-// Auto-login desde portal via URL params
-(function(){
-  var params=new URLSearchParams(window.location.search);
-  var u=params.get('u');
-  var p=params.get('p');
-  if(u&&p){
-    var ud=USUARIOS[u.toLowerCase()];
-    if(ud&&ud.pass===p){
-      // Limpiar URL sin recargar
-      history.replaceState(null,'',window.location.pathname);
-      activarSesion(u.toLowerCase(),ud);
-    }
-  }
-})();
+window._activarSesion = activarSesion;
 window.doLogout=function(){
+  window._pendingAutoLogin=false;
+  if(window._auth && window._signOut){ window._signOut(window._auth); }
   document.getElementById('portal').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('p-user').value='';
   document.getElementById('p-pass').value='';
   document.getElementById('tab-precio').classList.add('hidden-tab');
+  var btn=document.querySelector('.btn-login');
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Ingresar al sistema';}
 }
 
 // ===== NAV =====
