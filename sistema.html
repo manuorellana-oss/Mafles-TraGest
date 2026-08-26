@@ -206,15 +206,9 @@ tr:hover td{background:#f8fcf8}
   </div>
   <style>@keyframes tg-spin{to{transform:rotate(360deg)}}</style>
   <script>
-    // Seguridad: si por cualquier motivo los datos no cargan, no dejar al usuario bloqueado para siempre
-    setTimeout(function(){
-      var ov = document.getElementById('data-loading-overlay');
-      if(ov && ov.style.display !== 'none'){
-        window._dataReady = true;
-        ov.style.display = 'none';
-        console.warn('TraGest: tiempo de espera agotado cargando datos, se habilitó el sistema igual.');
-      }
-    }, 10000);
+    // Nota: el overlay ahora se oculta apenas Firebase inicializa (ver 'fbReady' más abajo),
+    // sin esperar datos — los datos se cargan recién después del login (ver activarSesion),
+    // que tiene su propio temporizador de seguridad independiente.
   </script>
   <div class="topbar">
     <div class="tb-left">
@@ -3812,7 +3806,13 @@ async function fbDel(col,fid){
   try{await window._deleteDoc(window._doc(window._db,col,fid))}catch(e){}
 }
 
-window.addEventListener('fbReady',async()=>{
+window.addEventListener('fbReady',()=>{
+  // Ya no se cargan datos aquí: se cargan recién después del login (ver activarSesion),
+  // para que las colecciones internas puedan exigir sesión iniciada sin bloquear el portal.
+  var loadOverlay = document.getElementById('data-loading-overlay');
+  if(loadOverlay) loadOverlay.style.display='none';
+});
+window._cargarDatosSistema = async function(){
   DATA.productores=await fbLoad('productores');
   DATA.recepciones=await fbLoad('recepciones');
   DATA.campo=await fbLoad('campo');
@@ -3826,11 +3826,9 @@ window.addEventListener('fbReady',async()=>{
   // Esperar también a que las fuentes/íconos terminen de cargar, para que la pantalla no se mueva justo cuando el usuario recién puede hacer clic
   try{ if(document.fonts && document.fonts.ready){ await document.fonts.ready; } }catch(e){}
   window._dataReady = true;
-  var loadOverlay = document.getElementById('data-loading-overlay');
-  if(loadOverlay) loadOverlay.style.display='none';
   pendQueue.forEach(({col,data})=>fbSave(col,data));pendQueue=[];
   esperarGoogleYRespaldar();
-});
+};
 
 // ===== Integración con Google Drive =====
 var DRIVE_CLIENT_ID = '252537529676-3vp66ffug50g9gumpn2rl2v7sl2kfjlj.apps.googleusercontent.com';
@@ -4111,6 +4109,18 @@ window.doLogin=function(){
   });
 }
 function activarSesion(u,ud){
+  window._dataReady = false;
+  var loadOverlay = document.getElementById('data-loading-overlay');
+  if(loadOverlay){
+    loadOverlay.style.display='flex';
+    setTimeout(function(){
+      if(loadOverlay.style.display !== 'none'){
+        window._dataReady = true;
+        loadOverlay.style.display='none';
+        console.warn('TraGest: tiempo de espera agotado cargando datos post-login, se habilitó el sistema igual.');
+      }
+    }, 10000);
+  }
   rolActual=ud.rol;
   window._esAdmin = !!ud.admin;
   window._vistaProceso = (ud.rol === 'proceso');
@@ -4149,6 +4159,17 @@ function activarSesion(u,ud){
   document.getElementById('portal').style.display='none';
   document.getElementById('app').style.display='flex';
   // sessionStorage desactivado
+  if(typeof window._cargarDatosSistema==='function'){
+    window._cargarDatosSistema().then(function(){
+      var ov=document.getElementById('data-loading-overlay');
+      if(ov) ov.style.display='none';
+    }).catch(function(e){
+      console.error('Error cargando datos tras login:',e);
+      var ov=document.getElementById('data-loading-overlay');
+      if(ov) ov.style.display='none';
+      window._dataReady = true;
+    });
+  }
 }
 window._activarSesion = activarSesion;
 window.doLogout=function(){
