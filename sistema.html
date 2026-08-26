@@ -109,6 +109,8 @@ tr:hover td{background:#f8fcf8}
 /* ========= KPI ========= */
 .kpi-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1rem}
 .kpi-card{background:#f0f8f0;border-radius:8px;padding:.9rem;text-align:center}
+.vista-proceso .kpi-costo-card{display:none !important}
+.vista-proceso .kpi-costo-col{display:none !important}
 .kpi-val{font-size:22px;font-weight:700;color:#1a4a2e}
 .kpi-lbl{font-size:11px;color:#666;margin-top:2px}
 
@@ -418,6 +420,7 @@ tr:hover td{background:#f8fcf8}
                 <th>Teléfono</th>
                 <th>Estado</th>
                 <th>Kg Totales</th>
+                <th>Ingresado por</th>
               </tr>
             </thead>
             <tbody id="prod-tbody"></tbody>
@@ -612,7 +615,7 @@ tr:hover td{background:#f8fcf8}
           <button class="btn btn-export" onclick="exportarExcel(&#39;recepciones&#39;,&#39;tbl-rec&#39;)"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         </div>
         <div class="tbl-wrap"><table id="tbl-rec">
-          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Kg Brutos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Kg Brutos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th></th></tr></thead>
           <tbody id="tbody-rec">
     <tr>
       <td>09/06/2026</td><td>matias abdala</td><td>Arándano</td>
@@ -932,25 +935,25 @@ tr:hover td{background:#f8fcf8}
             </div>
 
             <!-- Rendimiento individual -->
-            <div class="kpi-card">
+            <div class="kpi-card kpi-costo-card">
               <div class="kpi-val" id="kpi-rind">-</div>
               <div class="kpi-lbl">Rend. Individual (kg/persona×hr)</div>
             </div>
 
             <!-- Costo MP ajustado -->
-            <div class="kpi-card">
+            <div class="kpi-card kpi-costo-card">
               <div class="kpi-val" id="kpi-cmpa">-</div>
               <div class="kpi-lbl">Costo MP Ajustado ($/kg)</div>
             </div>
 
             <!-- Costo MO por kg -->
-            <div class="kpi-card">
+            <div class="kpi-card kpi-costo-card">
               <div class="kpi-val" id="kpi-cmo">-</div>
               <div class="kpi-lbl">Costo MO por kg ($/kg)</div>
             </div>
 
             <!-- Costo directo unitario -->
-            <div class="kpi-card" style="background:#1a4a2e">
+            <div class="kpi-card kpi-costo-card" style="background:#1a4a2e">
               <div class="kpi-val" id="kpi-cdu" style="color:#7dd69a">-</div>
               <div class="kpi-lbl" style="color:rgba(255,255,255,0.8)">Costo Directo Unitario ($/kg)</div>
               <div style="font-size:10px;color:rgba(255,255,255,0.6);margin-top:4px">= Precio mínimo de venta</div>
@@ -1019,8 +1022,8 @@ tr:hover td{background:#f8fcf8}
             <th>Fecha</th><th>Especie</th><th>Proceso</th>
             <th>Kg Entr.</th><th>Kg Result.</th>
             <th>Rend %</th><th>Merma %</th>
-            <th>Rend. Ind.</th>
-            <th>CMP Ajust.</th><th>CMO/kg</th><th>CDU</th>
+            <th class="kpi-costo-col">Rend. Ind.</th>
+            <th class="kpi-costo-col">CMP Ajust.</th><th class="kpi-costo-col">CMO/kg</th><th class="kpi-costo-col">CDU</th>
             <th></th>
           </tr></thead>
           <tbody id="tbody-kpi"><tr><td colspan="12" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr></tbody>
@@ -3539,11 +3542,13 @@ window.dispatchEvent(new Event('fbReady'));
 let USUARIOS = {
   'manu':      {pass:'admin2026',    rol:'gerencial', admin:true,  nombre:'Manuel Orellana'},
   'sebastian': {pass:'gerencia2026', rol:'gerencial', admin:false, nombre:'Sebastian Arauna'},
-  'katia':     {pass:'mafles2026',   rol:'operativo', admin:false, nombre:'Katia MAFLES'},
-  'gerencia':  {pass:'gerencia2026', rol:'gerencial', admin:false, nombre:'Gerencia MAFLES'},
-  'operativo': {pass:'mafles2026',   rol:'operativo', admin:false, nombre:'Operador MAFLES'}
+  'katia':     {pass:'katia2026',    rol:'gerencial', admin:false, nombre:'Katia Meza'},
+  'sandra':    {pass:'sandra2026',   rol:'gerencial', admin:false, nombre:'Sandra Arauna'},
+  'keren':     {pass:'keren2026',    rol:'gerencial', admin:false, nombre:'Keren Arauna'},
+  'aida':      {pass:'proceso2026',  rol:'proceso',   admin:false, nombre:'Aida Reyes'}
 };
 let rolActual = '';
+window._usuarioActual = '';
 let pendQueue = [];
 
 // ===== AGROQUIMICOS DB =====
@@ -4005,8 +4010,10 @@ window.doLogin=function(){
 function activarSesion(u,ud){
   rolActual=ud.rol;
   window._esAdmin = !!ud.admin;
+  window._vistaProceso = (ud.rol === 'proceso');
+  window._usuarioActual = ud.nombre;
   document.getElementById('tb-username').textContent=ud.nombre;
-  document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':'Operativo';
+  document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':(ud.rol==='proceso'?'Jefa de Proceso':'Operativo');
   if(ud.rol==='gerencial') document.getElementById('tab-precio').classList.remove('hidden-tab');
   // El respaldo a Drive queda disponible solo para el administrador (cuenta personal vinculada)
   var btnDrive = document.getElementById('btn-drive-connect');
@@ -4020,6 +4027,21 @@ function activarSesion(u,ud){
     if(btnDrive) btnDrive.style.display='none';
     if(btnRespaldo) btnRespaldo.style.display='none';
     if(driveStatus) driveStatus.style.display='none';
+  }
+  // Vista restringida "Jefa de Proceso": solo módulo KPI, sin ver costos ni precios
+  if(window._vistaProceso){
+    document.body.classList.add('vista-proceso');
+    document.querySelectorAll('.nav-tab').forEach(function(t){
+      if(t.getAttribute('data-mod') !== 'kpi'){ t.style.display = 'none'; }
+    });
+    setTimeout(function(){
+      var tabKpi = document.querySelector('.nav-tab[data-mod="kpi"]');
+      if(tabKpi) tabKpi.click();
+    }, 50);
+  } else {
+    document.body.classList.remove('vista-proceso');
+    document.querySelectorAll('.nav-tab').forEach(function(t){ t.style.display = ''; });
+    if(ud.rol!=='gerencial') document.getElementById('tab-precio').classList.add('hidden-tab');
   }
   document.getElementById('portal').style.display='none';
   document.getElementById('app').style.display='flex';
@@ -4284,7 +4306,8 @@ window.saveRecepcion=function(){
     bandejas:parseInt(document.getElementById('r-bandejas').value)||0,
     obs:document.getElementById('r-obs').value,
     responsable:document.getElementById('r-responsable').value.trim(),
-    eval:eval_data, estado:'Recibido'
+    eval:eval_data, estado:'Recibido',
+    creadoPor: window._usuarioActual || '', _tsCreacion: Date.now()
   };
   DATA.recepciones.push(rec);
   fbSave('recepciones',rec);
@@ -4328,8 +4351,9 @@ window.renderRecepcionHist=function(){
       <td>${fmtFecha(r.fecha)}</td><td>${r.proveedor}</td><td>${r.especie}</td>
       <td>${fmtNum(r.kg)} kg</td><td>${r.bandejas||0}</td><td>${r.guia||'-'}</td>
       <td><span class="badge badge-green">${r.estado||'Recibido'}</span></td>
+      <td style="font-size:11px;color:#888">${r.creadoPor||'-'}</td>
       <td><button class="btn btn-danger" style="height:30px;font-size:15px;padding:0 10px;min-width:36px" onclick="delRec('${r.id}')">🗑️</button></td>
-    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
 }
 window.delRecEnv=async function(id){
   if(!confirm('¿Eliminar este ingreso de envases?'))return;
@@ -4372,7 +4396,8 @@ window.saveCampo=function(){
     cosecha:document.getElementById('c-cosecha').value,
     dosis:document.getElementById('c-dosis').value,
     superficie:document.getElementById('c-sup').value,
-    aplicador:document.getElementById('c-aplicador').value
+    aplicador:document.getElementById('c-aplicador').value,
+    creadoPor: window._usuarioActual || '', _tsCreacion: Date.now()
   };
   DATA.campo.push(reg);fbSave('campo',reg);renderCampoHist();limpiarCampo();
   // Precargar módulo Recepción con datos comunes del registro guardado
@@ -4452,7 +4477,7 @@ function renderEnvIngresos(){
 window.saveDev=function(){
   const prov=document.getElementById('dev-prov').value.trim();
   if(!prov){alert('Ingresa proveedor');return}
-  const dev={id:uid(),fecha:document.getElementById('dev-fecha').value||today(),proveedor:prov,tipo:document.getElementById('dev-tipo').value,cantidad:parseInt(document.getElementById('dev-cant').value)||0,obs:document.getElementById('dev-obs').value};
+  const dev={id:uid(),fecha:document.getElementById('dev-fecha').value||today(),proveedor:prov,tipo:document.getElementById('dev-tipo').value,cantidad:parseInt(document.getElementById('dev-cant').value)||0,obs:document.getElementById('dev-obs').value,creadoPor:window._usuarioActual||'',_tsCreacion:Date.now()};
   DATA.devoluciones.push(dev);fbSave('devoluciones',dev);renderDevHist();showStatus('Devolución registrada ✓');
 }
 function renderDevHist(){
@@ -4640,7 +4665,7 @@ window.calcKpi=function(){
     reflexiones+='</div>';
 
     // Reflexión Rendimiento individual
-    if(rendInd>0){
+    if(rendInd>0 && !window._vistaProceso){
       reflexiones+='<div style="background:#f8fcf8;border-left:3px solid #1a6a9e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:#333">';
       reflexiones+='<strong style="color:#1a6a9e">Rendimiento Individual '+rendInd.toFixed(2)+' kg/persona×hr</strong><br>';
       reflexiones+='Mide la productividad real del equipo. A '+rendInd.toFixed(2)+' kg por persona por hora, con '+dotacion+' personas se procesan ~'+fmtNum(Math.round(rendInd*dotacion))+' kg/hora. Si este KPI baja en próximas partidas, evaluar calidad de MP o reforzar dotación.';
@@ -4648,7 +4673,7 @@ window.calcKpi=function(){
     }
 
     // Reflexión Costo MP ajustado
-    if(cmpa>0){
+    if(cmpa>0 && !window._vistaProceso){
       reflexiones+='<div style="background:#f8fcf8;border-left:3px solid #6a4a1e;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:#333">';
       reflexiones+='<strong style="color:#6a4a1e">Costo MP Ajustado $'+fmtNum(Math.round(cmpa))+'/kg</strong><br>';
       var diff=cmpa-precioCompra;
@@ -4657,7 +4682,7 @@ window.calcKpi=function(){
     }
 
     // Reflexión Costo MO
-    if(cmo>0){
+    if(cmo>0 && !window._vistaProceso){
       reflexiones+='<div style="background:#f8fcf8;border-left:3px solid #9e1a6a;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:#333">';
       reflexiones+='<strong style="color:#9e1a6a">Costo MO $'+fmtNum(Math.round(cmo))+'/kg</strong><br>';
       var sueldoTotal=dotacion*sueldo;
@@ -4666,7 +4691,7 @@ window.calcKpi=function(){
     }
 
     // Reflexión Costo Directo Unitario
-    if(cdu>0){
+    if(cdu>0 && !window._vistaProceso){
       reflexiones+='<div style="background:#1a4a2e;border-left:3px solid #7dd69a;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:#fff">';
       reflexiones+='<strong style="color:#7dd69a">Costo Directo Unitario $'+fmtNum(Math.round(cdu))+'/kg — Precio mínimo de venta</strong><br>';
       reflexiones+='Este es el piso financiero del proceso. El precio de venta debe superar $'+fmtNum(Math.round(cdu))+'/kg para no perder dinero. Agregar el margen de ganancia deseado sobre este valor para fijar el precio de venta final.';
@@ -4710,7 +4735,8 @@ window.saveKpi=function(){
     kgmp:kg,kgpp:pp,mermaKg:mermaKg,
     precioCompra:precioCompra,dotacion:dotacion,sueldo:sueldo,horas:horas,
     rend:rend+'%',merma:merma+'%',rendInd:rendInd,
-    cmpa:'$'+fmtNum(cmpa),cmo:'$'+fmtNum(cmo),cdu:'$'+fmtNum(cdu)
+    cmpa:'$'+fmtNum(cmpa),cmo:'$'+fmtNum(cmo),cdu:'$'+fmtNum(cdu),
+    creadoPor: window._usuarioActual || '', _tsCreacion: Date.now()
   };
   DATA.kpi.push(rec);fbSave('kpi',rec);renderKpiHist();renderDashboard();limpiarKpi();
   showStatus('KPI guardado ✓');
@@ -4730,10 +4756,10 @@ function renderKpiHist(){
       +'<td>'+fmtNum(r.kgpp)+' kg</td>'
       +'<td><span class="badge '+rendColor+'">'+r.rend+'</span></td>'
       +'<td><span class="badge '+mermaColor+'">'+r.merma+'</span></td>'
-      +'<td>'+r.rendInd+' kg/p×h</td>'
-      +'<td>'+r.cmpa+'</td>'
-      +'<td>'+r.cmo+'</td>'
-      +'<td style="font-weight:700;color:#1a4a2e">'+r.cdu+'</td>'
+      +'<td class="kpi-costo-col">'+r.rendInd+' kg/p×h</td>'
+      +'<td class="kpi-costo-col">'+r.cmpa+'</td>'
+      +'<td class="kpi-costo-col">'+r.cmo+'</td>'
+      +'<td class="kpi-costo-col" style="font-weight:700;color:#1a4a2e">'+r.cdu+'</td>'
       +'<td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delKpi(\''+r.id+'\')">🗑️</button></td>'
       +'</tr>';
   }).join('')||'<tr><td colspan="12" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
@@ -5119,6 +5145,7 @@ window.guardarProductor = function(){
   if(!validarRut(rut)){ showStatus('RUT inválido'); return; }
 
   var idEdit = document.getElementById('prod-id-edit').value;
+  var existente = idEdit ? DATA.productores.find(function(p){ return p.id===idEdit; }) : null;
   var rec = {
     id: idEdit || ('prod_'+Date.now()),
     rut: rut,
@@ -5135,6 +5162,10 @@ window.guardarProductor = function(){
       .map(function(e){ return document.getElementById('esp-'+e).value; }).join(', '),
     obs: document.getElementById('prod-obs').value.trim(),
     fecha: new Date().toISOString().split('T')[0],
+    creadoPor: existente ? (existente.creadoPor || window._usuarioActual || '') : (window._usuarioActual || ''),
+    _tsCreacion: existente ? (existente._tsCreacion || Date.now()) : Date.now(),
+    actualizadoPor: existente ? (window._usuarioActual || '') : '',
+    _tsActualizacion: existente ? Date.now() : 0,
   };
 
   if(idEdit){
@@ -5169,7 +5200,7 @@ window.renderListaProd = function(){
   var tbody = document.getElementById('prod-tbody');
   if(!tbody) return;
   if(prods.length===0){
-    tbody.innerHTML='<tr><td colspan="7" class="prod-empty">Sin productores registrados</td></tr>';
+    tbody.innerHTML='<tr><td colspan="8" class="prod-empty">Sin productores registrados</td></tr>';
     return;
   }
   tbody.innerHTML = prods.map(function(p){
@@ -5183,6 +5214,7 @@ window.renderListaProd = function(){
       '<td>'+(p.telefono||p.celular||'—')+'</td>'+
       '<td><span class="prod-badge activo">Activo</span></td>'+
       '<td><b>'+fmtNum(kgTotal)+' kg</b></td>'+
+      '<td style="font-size:11px;color:#888">'+(p.creadoPor||'—')+'</td>'+
     '</tr>';
   }).join('');
 };
@@ -5525,7 +5557,8 @@ window.savePrecio=function(){
     id:uid(),fecha:document.getElementById('pv-fecha').value||today(),
     especie:pvEsp,costo,margen:document.getElementById('pv-margen').value,
     flete:document.getElementById('pv-flete').value,otros:document.getElementById('pv-otros').value,
-    precio:document.getElementById('pv-precio-calc').textContent
+    precio:document.getElementById('pv-precio-calc').textContent,
+    creadoPor: window._usuarioActual || '', _tsCreacion: Date.now()
   };
   DATA.precios.push(rec);fbSave('precios',rec);renderPrecioHist();showStatus('Precio guardado ✓');
 }
