@@ -240,6 +240,7 @@ tr:hover td{background:#f8fcf8}
     <div class="nav-tab" onclick="showMod(&#39;kpi&#39;,this)" data-mod="kpi"><i class="ti ti-chart-bar"></i> KPI</div>
     <div class="nav-tab" id="tab-precio" onclick="showMod(&#39;precio&#39;,this)" data-mod="precio"><i class="ti ti-currency-dollar"></i> Precio de Venta</div>
     <div class="nav-tab" onclick="showMod(&#39;qr&#39;,this)" data-mod="qr"><i class="ti ti-qrcode"></i> QR</div>
+    <div class="nav-tab" onclick="showMod(&#39;consolidado&#39;,this);renderConsolidadoHist();" data-mod="consolidado"><i class="ti ti-stack-2"></i> Carga Consolidada</div>
   </div>
 
   <div class="content">
@@ -1168,6 +1169,67 @@ tr:hover td{background:#f8fcf8}
             </div>
           </div>
         </div>
+      </div>
+
+    </div>
+
+    <!-- CARGA CONSOLIDADA -->
+    <div class="module" id="mod-consolidado">
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-stack-2"></i> Armar Carga Consolidada</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <select id="cc-esp" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px" onchange="buscarPartidasConsolidado()">
+            <option value="">Selecciona especie</option>
+            <option>Espárrago</option><option>Arándano</option><option>Mora</option>
+            <option>Frambuesa</option><option>Uva</option><option>Kiwi</option><option>Cereza</option>
+          </select>
+          <input id="cc-cliente" placeholder="Cliente (ej: Watts)" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:160px">
+          <select id="cc-razon" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px">
+            <option value="">Razón social emisora</option>
+            <option>MAFLES</option>
+            <option>Comercializadora MAFLES</option>
+            <option>Comercializadora Las Flores</option>
+          </select>
+          <input id="cc-guia" placeholder="N° referencia/guía (opcional)" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:160px">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+          <div class="form-group" style="margin:0"><label style="font-size:11px;color:#666">Fecha de despacho</label><input type="date" id="cc-fecha-despacho" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px" onchange="buscarPartidasConsolidado()"></div>
+          <div class="form-group" style="margin:0"><label style="font-size:11px;color:#666">Kilos objetivo</label><input type="number" id="cc-kg-objetivo" placeholder="8000" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;width:120px" oninput="actualizarTotalConsolidado()"></div>
+          <button class="btn btn-secondary" style="height:36px;margin-top:16px" onclick="buscarPartidasConsolidado()"><i class="ti ti-search"></i> Buscar partidas</button>
+        </div>
+
+        <div id="cc-progreso" style="display:none;background:#e8f5e9;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#1a4a2e;font-weight:600"></div>
+
+        <div class="tbl-wrap"><table>
+          <thead><tr><th></th><th>Productor</th><th>Kg disponibles</th><th>Estado carencia</th><th>Kg a aportar</th></tr></thead>
+          <tbody id="tbody-cc-partidas"><tr><td colspan="5" style="text-align:center;color:#aaa;padding:1rem">Selecciona especie y fecha de despacho, luego busca</td></tr></tbody>
+        </table></div>
+
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="guardarCargaConsolidada()"><i class="ti ti-qrcode"></i> Guardar carga y generar QR consolidado</button>
+        </div>
+      </div>
+
+      <div class="card" id="cc-preview" style="display:none">
+        <div class="card-title"><i class="ti ti-qrcode"></i> QR Consolidado Generado</div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:start">
+          <div><img id="cc-canvas" width="180" height="180" style="border-radius:8px;display:block;margin:0 auto;border:3px solid #d0e8d0;background:#f5f5f5" alt="Generando QR...">
+            <div class="btn-row" style="justify-content:center;margin-top:.8rem">
+              <button class="btn btn-secondary" style="font-size:12px" onclick="descargarQRC()"><i class="ti ti-download"></i> Descargar QR</button>
+              <button class="btn btn-secondary" style="font-size:12px" onclick="imprimirQRC()"><i class="ti ti-printer"></i> Imprimir</button>
+            </div>
+          </div>
+          <div class="qr-ficha" id="cc-ficha"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-history"></i> Historial de Cargas Consolidadas</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Fecha despacho</th><th>Cliente</th><th>Especie</th><th>Kg totales</th><th>Estado</th><th>Acción</th></tr></thead>
+          <tbody id="tbody-cc-hist"><tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin cargas consolidadas</td></tr></tbody>
+        </table></div>
       </div>
 
     </div>
@@ -3700,7 +3762,7 @@ const ENVASES_X_ESP = {
 };
 
 // ===== DATA LOCAL =====
-let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[]};
+let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[],consolidadas:[]};
 window._dataReady = false;
 
 // ===== HELPERS =====
@@ -3737,7 +3799,8 @@ window.addEventListener('fbReady',async()=>{
   DATA.devoluciones=await fbLoad('devoluciones');
   DATA.kpi=await fbLoad('kpi');
   DATA.precios=await fbLoad('precios');
-  renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();
+  DATA.consolidadas=await fbLoad('consolidadas');
+  renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();renderConsolidadoHist();
   // Poblar datos de Resumen sin forzar el cambio de pestaña (evita sacar al usuario de donde esté navegando)
   initResumen();
   // Esperar también a que las fuentes/íconos terminen de cargar, para que la pantalla no se mueva justo cuando el usuario recién puede hacer clic
@@ -5765,6 +5828,167 @@ window.abrirVisModal=function(id){
     visImg.src=qrObjVis.createDataURL(6,4);
   }catch(e){ console.warn('Error generando QR local:',e); }
   document.getElementById('vis-modal').style.display='block';
+}
+
+// ===== CARGA CONSOLIDADA =====
+// Fecha de cumplimiento de carencia de un registro de campo (fecha aplicación + carencia)
+function fechaCumplimientoAgro(a){
+  if(a.cosecha) return a.cosecha; // ya viene calculada al guardar el registro de campo
+  if(!a.fecha) return null;
+  const d=new Date(a.fecha+'T12:00:00');
+  d.setDate(d.getDate()+(parseInt(a.carencia)||0));
+  return d.toISOString().split('T')[0];
+}
+// Peor caso de carencia entre todos los agroquímicos aplicados a una partida (productor+especie),
+// comparado contra la fecha de despacho de la carga consolidada
+function evaluarCarenciaPartida(proveedor,especie,fechaDespacho){
+  const agros=DATA.campo.filter(c=>c.proveedor===proveedor&&c.especie===especie);
+  if(agros.length===0) return {cumple:null,fechaMax:null,agros:[]}; // sin registros -> advertencia, no bloqueo automático
+  let fechaMax=null;
+  agros.forEach(a=>{
+    const fc=fechaCumplimientoAgro(a);
+    if(fc&&(!fechaMax||fc>fechaMax)) fechaMax=fc;
+  });
+  if(!fechaMax) return {cumple:null,fechaMax:null,agros};
+  const cumple = fechaDespacho ? (fechaDespacho>=fechaMax) : false;
+  return {cumple,fechaMax,agros};
+}
+// Kg ya comprometidos de una partida (recepción) en otras cargas consolidadas
+function kgUsadosDePartida(recepId){
+  let total=0;
+  DATA.consolidadas.forEach(cc=>{
+    (cc.partidasIncluidas||[]).forEach(p=>{ if(p.partidaId===recepId) total+=Number(p.kilosAportados)||0; });
+  });
+  return total;
+}
+window.buscarPartidasConsolidado=function(){
+  const esp=document.getElementById('cc-esp').value;
+  const fechaDespacho=document.getElementById('cc-fecha-despacho').value;
+  const tbody=document.getElementById('tbody-cc-partidas');
+  if(!esp){ tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#aaa;padding:1rem">Selecciona especie y fecha de despacho, luego busca</td></tr>'; return; }
+  const partidas=DATA.recepciones.filter(r=>r.especie===esp);
+  if(!partidas.length){ tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#aaa;padding:1rem">Sin partidas de esa especie</td></tr>'; return; }
+  tbody.innerHTML=partidas.map(r=>{
+    const kgUsados=kgUsadosDePartida(r.id);
+    const kgDisp=Math.max(0,(Number(r.kg)||0)-kgUsados);
+    const car=evaluarCarenciaPartida(r.proveedor,esp,fechaDespacho);
+    let badge;
+    if(car.cumple===null) badge='<span class="badge badge-amber">Sin registros de campo</span>';
+    else if(car.cumple) badge='<span class="badge badge-green">Cumple (desde '+fmtFecha(car.fechaMax)+')</span>';
+    else badge='<span class="badge badge-red">No cumple (hasta '+fmtFecha(car.fechaMax)+')</span>';
+    const disabled = kgDisp<=0 ? 'disabled' : '';
+    return `<tr data-partida="${r.id}" data-proveedor="${r.proveedor}" data-cumple="${car.cumple===true?'1':'0'}" data-kgdisp="${kgDisp}">
+      <td><input type="checkbox" class="cc-chk" onchange="actualizarTotalConsolidado()" ${disabled}></td>
+      <td>${r.proveedor}</td>
+      <td>${fmtNum(kgDisp)} kg</td>
+      <td>${badge}</td>
+      <td><input type="number" class="cc-kg-aporte" style="width:90px;height:30px;padding:0 6px;border:1px solid #d0e8d0;border-radius:6px" value="${kgDisp}" max="${kgDisp}" min="0" ${disabled} oninput="actualizarTotalConsolidado()"></td>
+    </tr>`;
+  }).join('');
+  actualizarTotalConsolidado();
+}
+window.actualizarTotalConsolidado=function(){
+  const objetivo=parseFloat(document.getElementById('cc-kg-objetivo').value)||0;
+  let total=0;
+  document.querySelectorAll('#tbody-cc-partidas tr').forEach(tr=>{
+    const chk=tr.querySelector('.cc-chk');
+    if(chk&&chk.checked){ total+=parseFloat(tr.querySelector('.cc-kg-aporte').value)||0; }
+  });
+  const el=document.getElementById('cc-progreso');
+  if(objetivo>0){
+    el.style.display='block';
+    el.textContent='Acumulado: '+fmtNum(total)+' kg / '+fmtNum(objetivo)+' kg objetivo'+(total>=objetivo?'  ✓':'');
+  } else if(total>0){
+    el.style.display='block';
+    el.textContent='Acumulado: '+fmtNum(total)+' kg';
+  } else {
+    el.style.display='none';
+  }
+}
+window.guardarCargaConsolidada=function(){
+  const esp=document.getElementById('cc-esp').value;
+  const cliente=document.getElementById('cc-cliente').value.trim();
+  const razon=document.getElementById('cc-razon').value;
+  const guia=document.getElementById('cc-guia').value.trim();
+  const fechaDespacho=document.getElementById('cc-fecha-despacho').value;
+  const kgObjetivo=parseFloat(document.getElementById('cc-kg-objetivo').value)||0;
+  if(!esp||!cliente||!fechaDespacho){ alert('Ingresa especie, cliente y fecha de despacho'); return; }
+  const filas=[...document.querySelectorAll('#tbody-cc-partidas tr')].filter(tr=>{
+    const chk=tr.querySelector('.cc-chk'); return chk&&chk.checked;
+  });
+  if(!filas.length){ alert('Selecciona al menos una partida'); return; }
+  const partidasIncluidas=[];
+  for(const tr of filas){
+    const partidaId=tr.dataset.partida;
+    const proveedor=tr.dataset.proveedor;
+    const kgDisp=parseFloat(tr.dataset.kgdisp)||0;
+    const kgAporte=parseFloat(tr.querySelector('.cc-kg-aporte').value)||0;
+    const cumple=tr.dataset.cumple==='1';
+    if(kgAporte<=0||kgAporte>kgDisp){ alert('Revisa los kilos aportados de '+proveedor+': deben ser mayores a 0 y no superar el disponible'); return; }
+    if(!cumple){ alert('No puedes incluir a '+proveedor+' en esta carga: no cumple carencia a la fecha de despacho seleccionada'); return; }
+    const car=evaluarCarenciaPartida(proveedor,esp,fechaDespacho);
+    partidasIncluidas.push({partidaId,proveedor,kilosAportados:kgAporte,cumpleCarencia:true,fechaCumplimiento:car.fechaMax});
+  }
+  const kilosTotales=partidasIncluidas.reduce((s,p)=>s+p.kilosAportados,0);
+  const reg={
+    id:uid(),especie:esp,cliente,razonSocialEmisora:razon,referenciaGuia:guia,
+    fechaDespacho,kilosObjetivo:kgObjetivo,kilosTotales,estadoCarencia:'cumple',
+    partidasIncluidas,creadoPor:window._usuarioActual||'',_tsCreacion:Date.now()
+  };
+  DATA.consolidadas.push(reg);
+  fbSave('consolidadas',reg);
+  renderConsolidadoHist();
+  showStatus('Carga consolidada guardada ✓');
+  genQRConsolidado(reg.id);
+}
+window.renderConsolidadoHist=function(){
+  const tbody=document.getElementById('tbody-cc-hist');
+  if(!tbody) return;
+  if(!DATA.consolidadas.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin cargas consolidadas</td></tr>'; return; }
+  tbody.innerHTML=DATA.consolidadas.slice().reverse().map(cc=>`
+    <tr><td>${fmtFecha(cc.fechaDespacho)}</td><td>${cc.cliente}</td><td>${cc.especie}</td>
+    <td>${fmtNum(cc.kilosTotales)} kg</td>
+    <td><span class="badge badge-green">Cumple</span></td>
+    <td><button class="btn btn-primary" style="height:28px;font-size:11px;padding:0 10px" onclick="genQRConsolidado('${cc.id}')"><i class="ti ti-qrcode" style="font-size:11px"></i> Ver QR</button></td></tr>
+  `).join('');
+}
+window.genQRConsolidado=function(id){
+  const cc=DATA.consolidadas.find(x=>x.id===id);
+  if(!cc) return;
+  document.getElementById('cc-preview').style.display='block';
+  const txt='https://mafles-tra-gest.vercel.app/trazabilidad.html?consolidado='+cc.id;
+  const img=document.getElementById('cc-canvas');
+  try{
+    const q=qrcode(0,'M'); q.addData(txt); q.make(); img.src=q.createDataURL(6,4);
+  }catch(e){ console.warn('Error generando QR consolidado:',e); }
+  const detalle=cc.partidasIncluidas.map(p=>'<div style="margin-top:4px;padding-top:4px;border-top:0.5px solid #eee"><strong>'+p.proveedor+'</strong> — '+fmtNum(p.kilosAportados)+' kg &nbsp; <span class="badge badge-green">Cumple desde '+fmtFecha(p.fechaCumplimiento)+'</span></div>').join('');
+  document.getElementById('cc-ficha').innerHTML='<div style="display:grid;gap:4px">'
+    +'<div><strong>Cliente:</strong> '+cc.cliente+' &nbsp;<strong>Especie:</strong> '+cc.especie+'</div>'
+    +'<div><strong>Fecha despacho:</strong> '+fmtFecha(cc.fechaDespacho)+' &nbsp;<strong>Kg totales:</strong> '+fmtNum(cc.kilosTotales)+' kg</div>'
+    +(cc.razonSocialEmisora?'<div><strong>Razón social:</strong> '+cc.razonSocialEmisora+'</div>':'')
+    +(cc.referenciaGuia?'<div><strong>Referencia/Guía:</strong> '+cc.referenciaGuia+'</div>':'')
+    +'<div style="margin-top:6px"><strong>Partidas incluidas:</strong>'+detalle+'</div>'
+    +'</div>';
+}
+window.descargarQRC=function(){
+  const img=document.getElementById('cc-canvas');
+  if(!img||!img.src){alert('Primero genera el QR');return;}
+  const a=document.createElement('a'); a.href=img.src; a.download='QR-Consolidado-TraGest.gif';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+window.imprimirQRC=function(){
+  const img=document.getElementById('cc-canvas'); const ficha=document.getElementById('cc-ficha');
+  if(!img||!img.src){alert('Primero genera el QR');return;}
+  const w=window.open('','_blank');
+  w.document.write('<html><head><title>Ficha Carga Consolidada</title><style>'
+    +'body{font-family:Arial,sans-serif;padding:24px;color:#1a2b20}'
+    +'.wrap{display:flex;gap:24px;align-items:flex-start;max-width:700px;margin:0 auto}'
+    +'img{width:220px;height:220px;border:3px solid #d0e8d0;border-radius:8px}'
+    +'.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin:2px}'
+    +'.badge-green{background:#d4edda}'
+    +'@media print{body{padding:0}}'
+    +'</style></head><body><div class="wrap"><img src="'+img.src+'"><div>'+ficha.innerHTML+'</div></div></body></html>');
+  w.document.close(); w.onload=function(){ w.focus(); w.print(); };
 }
 
 // ===== EXPORT EXCEL =====

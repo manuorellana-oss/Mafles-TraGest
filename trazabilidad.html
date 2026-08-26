@@ -95,6 +95,7 @@ const firebaseConfig = {
 const CLAVE_PRIVADA = 'mafles2026';
 const params = new URLSearchParams(window.location.search);
 const recepId = params.get('id');
+const consolidadoId = params.get('consolidado');
 let datosGlobales = null;
 let agrosGlobales = [];
 
@@ -203,6 +204,76 @@ function renderVistaPrivada(r, agros){
   return html;
 }
 
+function renderVistaConsolidadaPublica(cc, detalle){
+  let html='<div class="card">';
+  html+='<div class="section-title">Carga consolidada</div>';
+  html+='<div class="row"><span class="lbl">Cliente</span><span class="val">'+cc.cliente+'</span></div>';
+  html+='<div class="row"><span class="lbl">Especie</span><span class="val">'+cc.especie+'</span></div>';
+  html+='<div class="row"><span class="lbl">Fecha despacho</span><span class="val">'+fmtFecha(cc.fechaDespacho)+'</span></div>';
+  html+='<div class="row"><span class="lbl">Kilos totales</span><span class="val">'+fmtNum(cc.kilosTotales)+' kg</span></div>';
+  html+='</div>';
+  detalle.forEach(d=>{
+    html+='<div class="card">';
+    html+='<div class="section-title">Partida — '+d.proveedor+' ('+fmtNum(d.kilosAportados)+' kg)</div>';
+    if(!d.agros.length){
+      html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
+    }else{
+      html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Fecha Aplic.</th><th>Carencia</th><th>Cumple</th></tr></thead><tbody>';
+      d.agros.forEach(a=>{
+        const cum=cumpleCarencia(a.cosecha, cc.fechaDespacho);
+        html+='<tr>';
+        html+='<td><strong>'+a.agroquimico+'</strong></td>';
+        html+='<td>'+(a.sag||'-')+'</td>';
+        html+='<td>'+fmtFecha(a.fecha)+'</td>';
+        html+='<td>'+(a.carencia||'-')+'d</td>';
+        html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
+        html+='</tr>';
+      });
+      html+='</tbody></table></div>';
+    }
+    html+='</div>';
+  });
+  return html;
+}
+
+function renderVistaConsolidadaPrivada(cc, detalle){
+  let html='<div class="vista-privada-banner">🔓 Vista privada — Personal MAFLES</div>';
+  html+='<div class="card">';
+  html+='<div class="section-title">Carga consolidada</div>';
+  html+='<div class="row"><span class="lbl">Cliente</span><span class="val">'+cc.cliente+'</span></div>';
+  html+='<div class="row"><span class="lbl">Especie</span><span class="val">'+cc.especie+'</span></div>';
+  html+='<div class="row"><span class="lbl">Fecha despacho</span><span class="val">'+fmtFecha(cc.fechaDespacho)+'</span></div>';
+  html+='<div class="row"><span class="lbl">Kilos totales</span><span class="val">'+fmtNum(cc.kilosTotales)+' kg</span></div>';
+  if(cc.razonSocialEmisora) html+='<div class="row"><span class="lbl">Razón social</span><span class="val">'+cc.razonSocialEmisora+'</span></div>';
+  if(cc.referenciaGuia) html+='<div class="row"><span class="lbl">Referencia/Guía</span><span class="val">'+cc.referenciaGuia+'</span></div>';
+  html+='</div>';
+  detalle.forEach(d=>{
+    html+='<div class="card">';
+    html+='<div class="section-title">Partida — '+d.proveedor+' ('+fmtNum(d.kilosAportados)+' kg)</div>';
+    html+='<div class="row"><span class="lbl">RUT proveedor</span><span class="val">'+(d.rut||'N/A')+'</span></div>';
+    html+='<div class="row"><span class="lbl">N° guía productor</span><span class="val">'+(d.guia||'N/A')+'</span></div>';
+    if(!d.agros.length){
+      html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
+    }else{
+      html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Fecha Aplic.</th><th>Carencia</th><th>F. Cosecha mín.</th><th>Cumple</th></tr></thead><tbody>';
+      d.agros.forEach(a=>{
+        const cum=cumpleCarencia(a.cosecha, cc.fechaDespacho);
+        html+='<tr>';
+        html+='<td><strong>'+a.agroquimico+'</strong></td>';
+        html+='<td>'+(a.sag||'-')+'</td>';
+        html+='<td>'+fmtFecha(a.fecha)+'</td>';
+        html+='<td>'+(a.carencia||'-')+'d</td>';
+        html+='<td>'+fmtFecha(a.cosecha)+'</td>';
+        html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
+        html+='</tr>';
+      });
+      html+='</tbody></table></div>';
+    }
+    html+='</div>';
+  });
+  return html;
+}
+
 window.mostrarModalAcceso = function(){
   document.getElementById('modal-acceso').classList.add('show');
   setTimeout(()=>document.getElementById('input-clave').focus(),100);
@@ -216,7 +287,10 @@ window.verificarClave = function(){
   const clave=document.getElementById('input-clave').value;
   if(clave===CLAVE_PRIVADA){
     cerrarModal();
-    document.getElementById('main-content').innerHTML=renderVistaPrivada(datosGlobales, agrosGlobales);
+    const html = consolidadoId
+      ? renderVistaConsolidadaPrivada(datosGlobales, agrosGlobales)
+      : renderVistaPrivada(datosGlobales, agrosGlobales);
+    document.getElementById('main-content').innerHTML=html;
     document.getElementById('badge-vista').textContent='Vista privada';
     document.getElementById('badge-vista').className='badge-vista badge-privada';
     document.getElementById('btn-acceso-wrap').style.display='none';
@@ -225,9 +299,83 @@ window.verificarClave = function(){
   }
 }
 
+async function cargarTrazabilidadPartida(app,db,cont){
+  const recSnap=await getDoc(doc(db,'recepciones',recepId));
+  let r;
+  if(!recSnap.exists()){
+    const recQ=query(collection(db,'recepciones'),where('id','==',recepId));
+    const recSnap2=await getDocs(recQ);
+    if(recSnap2.empty){
+      cont.innerHTML='<div class="error-box">⚠️ Registro no encontrado (ID: '+recepId+')</div>';
+      return;
+    }
+    r=recSnap2.docs[0].data();
+  } else {
+    r=recSnap.data();
+  }
+
+  const campoQ=query(collection(db,'campo'),
+    where('proveedor','==',r.proveedor),
+    where('especie','==',r.especie));
+  const campoSnap=await getDocs(campoQ);
+  const agros=campoSnap.docs.map(d=>d.data());
+
+  const todosQ=query(collection(db,'recepciones'),orderBy('_ts','asc'));
+  const todosSnap=await getDocs(todosQ);
+  const idx=todosSnap.docs.findIndex(d=>d.data().id===recepId);
+  const nCorr=String(idx>=0?idx+1:1).padStart(4,'0');
+  document.getElementById('hdr-title').textContent='TRZ-'+nCorr+' — '+r.especie;
+
+  datosGlobales=r;
+  agrosGlobales=agros;
+
+  cont.innerHTML=renderVistaPublica(r, agros);
+  document.getElementById('btn-acceso-wrap').style.display='block';
+}
+
+async function cargarTrazabilidadConsolidada(app,db,cont){
+  const ccSnap=await getDoc(doc(db,'consolidadas',consolidadoId));
+  let cc;
+  if(!ccSnap.exists()){
+    const ccQ=query(collection(db,'consolidadas'),where('id','==',consolidadoId));
+    const ccSnap2=await getDocs(ccQ);
+    if(ccSnap2.empty){
+      cont.innerHTML='<div class="error-box">⚠️ Carga consolidada no encontrada (ID: '+consolidadoId+')</div>';
+      return;
+    }
+    cc=ccSnap2.docs[0].data();
+  } else {
+    cc=ccSnap.data();
+  }
+
+  document.getElementById('hdr-title').textContent='Consolidado — '+cc.especie+' · '+cc.cliente;
+
+  // Para cada partida incluida, traer su recepción (RUT, guía) y sus agroquímicos de campo
+  const detalle=[];
+  for(const p of (cc.partidasIncluidas||[])){
+    let rutProv='',guiaProv='';
+    try{
+      const rSnap=await getDoc(doc(db,'recepciones',p.partidaId));
+      if(rSnap.exists()){ rutProv=rSnap.data().rut||''; guiaProv=rSnap.data().guia||''; }
+    }catch(e){}
+    const campoQ=query(collection(db,'campo'),
+      where('proveedor','==',p.proveedor),
+      where('especie','==',cc.especie));
+    const campoSnap=await getDocs(campoQ);
+    const agros=campoSnap.docs.map(d=>d.data());
+    detalle.push({proveedor:p.proveedor,kilosAportados:p.kilosAportados,rut:rutProv,guia:guiaProv,agros});
+  }
+
+  datosGlobales=cc;
+  agrosGlobales=detalle;
+
+  cont.innerHTML=renderVistaConsolidadaPublica(cc, detalle);
+  document.getElementById('btn-acceso-wrap').style.display='block';
+}
+
 async function cargarTrazabilidad(){
   const cont=document.getElementById('main-content');
-  if(!recepId){
+  if(!recepId && !consolidadoId){
     cont.innerHTML='<div class="loading">⏳ Cargando...</div>';
     return;
   }
@@ -235,37 +383,11 @@ async function cargarTrazabilidad(){
     const app=initializeApp(firebaseConfig);
     const db=getFirestore(app);
 
-    const recSnap=await getDoc(doc(db,'recepciones',recepId));
-    let r;
-    if(!recSnap.exists()){
-      const recQ=query(collection(db,'recepciones'),where('id','==',recepId));
-      const recSnap2=await getDocs(recQ);
-      if(recSnap2.empty){
-        cont.innerHTML='<div class="error-box">⚠️ Registro no encontrado (ID: '+recepId+')</div>';
-        return;
-      }
-      r=recSnap2.docs[0].data();
+    if(consolidadoId){
+      await cargarTrazabilidadConsolidada(app,db,cont);
     } else {
-      r=recSnap.data();
+      await cargarTrazabilidadPartida(app,db,cont);
     }
-
-    const campoQ=query(collection(db,'campo'),
-      where('proveedor','==',r.proveedor),
-      where('especie','==',r.especie));
-    const campoSnap=await getDocs(campoQ);
-    const agros=campoSnap.docs.map(d=>d.data());
-
-    const todosQ=query(collection(db,'recepciones'),orderBy('_ts','asc'));
-    const todosSnap=await getDocs(todosQ);
-    const idx=todosSnap.docs.findIndex(d=>d.data().id===recepId);
-    const nCorr=String(idx>=0?idx+1:1).padStart(4,'0');
-    document.getElementById('hdr-title').textContent='TRZ-'+nCorr+' — '+r.especie;
-
-    datosGlobales=r;
-    agrosGlobales=agros;
-
-    cont.innerHTML=renderVistaPublica(r, agros);
-    document.getElementById('btn-acceso-wrap').style.display='block';
 
   }catch(err){
     cont.innerHTML='<div class="error-box">⚠️ Error cargando datos:<br>'+err.message+'</div>';
