@@ -235,6 +235,7 @@ tr:hover td{background:#f8fcf8}
     <div class="nav-tab" id="tab-precio" onclick="showMod(&#39;precio&#39;,this)" data-mod="precio"><i class="ti ti-currency-dollar"></i> Precio de Venta</div>
     <div class="nav-tab" onclick="showMod(&#39;qr&#39;,this)" data-mod="qr"><i class="ti ti-qrcode"></i> QR</div>
     <div class="nav-tab" onclick="showMod(&#39;consolidado&#39;,this);renderConsolidadoHist();" data-mod="consolidado"><i class="ti ti-stack-2"></i> Carga Consolidada</div>
+    <div class="nav-tab hidden-tab" id="tab-auditoria" onclick="showMod(&#39;auditoria&#39;,this);renderAuditoria();" data-mod="auditoria"><i class="ti ti-shield-lock"></i> Auditoría</div>
   </div>
 
   <div class="content">
@@ -1226,6 +1227,20 @@ tr:hover td{background:#f8fcf8}
         </table></div>
       </div>
 
+    </div>
+
+    <!-- AUDITORÍA (solo administrador) -->
+    <div class="module" id="mod-auditoria">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-shield-lock"></i> Auditoría de Eliminaciones</div>
+        <p style="font-size:12.5px;color:#666;margin-bottom:12px">
+          Registro de quién eliminó qué, cuándo y de qué módulo. Esto no se puede editar ni borrar desde el sistema.
+        </p>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Fecha y hora</th><th>Quién</th><th>Módulo</th><th>Registro eliminado</th></tr></thead>
+          <tbody id="tbody-auditoria"><tr><td colspan="4" style="text-align:center;color:#aaa;padding:1rem">Cargando...</td></tr></tbody>
+        </table></div>
+      </div>
     </div>
 
   </div><!-- /content -->
@@ -3776,7 +3791,7 @@ const ENVASES_X_ESP = {
 };
 
 // ===== DATA LOCAL =====
-let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[],consolidadas:[]};
+let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[],consolidadas:[],auditoria:[]};
 window._dataReady = false;
 
 // ===== HELPERS =====
@@ -3802,7 +3817,21 @@ async function fbLoad(col){
     return snap.docs.map(d=>({...d.data(),_fid:d.id}));
   }catch(e){return[]}
 }
-async function fbDel(col,fid){
+function resumenRegistro(data){
+  if(!data) return '(sin datos)';
+  var candidatos=['nombre','proveedor','cliente','especie','tipo','agroquimico','rut'];
+  var partes=candidatos.filter(function(k){return data[k];}).map(function(k){return data[k];});
+  return partes.slice(0,2).join(' — ')||'(sin descripción)';
+}
+async function fbDel(col,fid,registroEliminado){
+  try{
+    await window._addDoc(window._col(window._db,'auditoria'),{
+      accion:'eliminar', coleccion:col,
+      resumen: resumenRegistro(registroEliminado),
+      por: window._usuarioActual||'desconocido',
+      _ts:Date.now()
+    });
+  }catch(e){ console.warn('No se pudo registrar auditoría de borrado:',e); }
   try{await window._deleteDoc(window._doc(window._db,col,fid))}catch(e){}
 }
 
@@ -3820,6 +3849,7 @@ window._cargarDatosSistema = async function(){
   DATA.kpi=await fbLoad('kpi');
   DATA.precios=await fbLoad('precios');
   DATA.consolidadas=await fbLoad('consolidadas');
+  DATA.auditoria=await fbLoad('auditoria');
   renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();renderConsolidadoHist();
   // Poblar datos de Resumen sin forzar el cambio de pestaña (evita sacar al usuario de donde esté navegando)
   initResumen();
@@ -4128,6 +4158,7 @@ function activarSesion(u,ud){
   document.getElementById('tb-username').textContent=ud.nombre;
   document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':(ud.rol==='proceso'?'Jefa de Proceso':'Operativo');
   if(ud.rol==='gerencial') document.getElementById('tab-precio').classList.remove('hidden-tab');
+  if(window._esAdmin) document.getElementById('tab-auditoria').classList.remove('hidden-tab');
   // El respaldo a Drive queda disponible solo para el administrador (cuenta personal vinculada)
   var btnDrive = document.getElementById('btn-drive-connect');
   var btnRespaldo = document.getElementById('btn-respaldo');
@@ -4155,6 +4186,7 @@ function activarSesion(u,ud){
     document.body.classList.remove('vista-proceso');
     document.querySelectorAll('.nav-tab').forEach(function(t){ t.style.display = ''; });
     if(ud.rol!=='gerencial') document.getElementById('tab-precio').classList.add('hidden-tab');
+    if(!window._esAdmin) document.getElementById('tab-auditoria').classList.add('hidden-tab');
   }
   document.getElementById('portal').style.display='none';
   document.getElementById('app').style.display='flex';
@@ -4180,6 +4212,7 @@ window.doLogout=function(){
   document.getElementById('p-user').value='';
   document.getElementById('p-pass').value='';
   document.getElementById('tab-precio').classList.add('hidden-tab');
+  document.getElementById('tab-auditoria').classList.add('hidden-tab');
   var btn=document.querySelector('.btn-login');
   if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> Ingresar al sistema';}
 }
@@ -4473,14 +4506,14 @@ window.renderRecepcionHist=function(){
 window.delRecEnv=async function(id){
   if(!confirm('¿Eliminar este ingreso de envases?'))return;
   const rec=DATA.recepciones.find(r=>r.id===id);
-  if(rec?._fid) await fbDel('recepciones',rec._fid);
+  if(rec?._fid) await fbDel('recepciones',rec._fid,rec);
   DATA.recepciones=DATA.recepciones.filter(r=>r.id!==id);
   renderEnvIngresos();renderSaldo();
 }
 window.delRec=async function(id){
   if(!confirm('¿Eliminar esta recepción?'))return;
   const rec=DATA.recepciones.find(r=>r.id===id);
-  if(rec?._fid) await fbDel('recepciones',rec._fid);
+  if(rec?._fid) await fbDel('recepciones',rec._fid,rec);
   DATA.recepciones=DATA.recepciones.filter(r=>r.id!==id);
   renderRecepcionHist();renderEnvIngresos();renderQrList();
 }
@@ -4554,7 +4587,7 @@ window.renderCampoHist=function(){
 window.delCampo=async function(id){
   if(!confirm('¿Eliminar?'))return;
   const r=DATA.campo.find(x=>x.id===id);
-  if(r?._fid) await fbDel('campo',r._fid);
+  if(r?._fid) await fbDel('campo',r._fid,r);
   DATA.campo=DATA.campo.filter(x=>x.id!==id);renderCampoHist();
 }
 
@@ -4617,7 +4650,7 @@ function renderDevHist(){
 }
 window.delDev=async function(id){
   const d=DATA.devoluciones.find(x=>x.id===id);
-  if(d?._fid) await fbDel('devoluciones',d._fid);
+  if(d?._fid) await fbDel('devoluciones',d._fid,d);
   DATA.devoluciones=DATA.devoluciones.filter(x=>x.id!==id);renderDevHist();
 }
 window.renderSaldo=function(){
@@ -4883,7 +4916,7 @@ function renderKpiHist(){
 window.delKpi=async function(id){
   if(!confirm('¿Eliminar este registro KPI?'))return;
   var r=DATA.kpi.find(function(x){return x.id===id;});
-  if(r&&r._fid) await fbDel('kpi',r._fid);
+  if(r&&r._fid) await fbDel('kpi',r._fid,r);
   DATA.kpi=DATA.kpi.filter(function(x){return x.id!==id;});
   renderKpiHist();
   showStatus('KPI eliminado');
@@ -5686,7 +5719,7 @@ function renderPrecioHist(){
 }
 window.delPrecio=async function(id){
   const r=DATA.precios.find(x=>x.id===id);
-  if(r?._fid) await fbDel('precios',r._fid);
+  if(r?._fid) await fbDel('precios',r._fid,r);
   DATA.precios=DATA.precios.filter(x=>x.id!==id);renderPrecioHist();
 }
 
@@ -6003,6 +6036,17 @@ window.renderConsolidadoHist=function(){
     <td><span class="badge badge-green">Cumple</span></td>
     <td><button class="btn btn-primary" style="height:28px;font-size:11px;padding:0 10px" onclick="genQRConsolidado('${cc.id}')"><i class="ti ti-qrcode" style="font-size:11px"></i> Ver QR</button></td></tr>
   `).join('');
+}
+window.renderAuditoria=function(){
+  const tbody=document.getElementById('tbody-auditoria');
+  if(!tbody) return;
+  const NOMBRES_COL={recepciones:'Recepción',campo:'Campo',devoluciones:'Envases/Devoluciones',kpi:'KPI',precios:'Precio de Venta',productores:'Productores',consolidadas:'Carga Consolidada'};
+  const registros=(DATA.auditoria||[]).slice().sort((a,b)=>(b._ts||0)-(a._ts||0));
+  if(!registros.length){ tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#aaa;padding:1rem">Sin eliminaciones registradas</td></tr>'; return; }
+  tbody.innerHTML=registros.map(a=>{
+    const fecha=a._ts?new Date(a._ts).toLocaleString('es-CL',{dateStyle:'short',timeStyle:'short'}):'-';
+    return `<tr><td>${fecha}</td><td>${a.por||'-'}</td><td>${NOMBRES_COL[a.coleccion]||a.coleccion}</td><td>${a.resumen||'-'}</td></tr>`;
+  }).join('');
 }
 window.genQRConsolidado=function(id){
   const cc=DATA.consolidadas.find(x=>x.id===id);
