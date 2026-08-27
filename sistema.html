@@ -265,9 +265,9 @@ tr:hover td{background:#f8fcf8}
         .prod-lista{margin-top:20px}
         .prod-lista h3{font-size:13px;font-weight:700;color:#1a4a2e;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
         .prod-search{width:220px;height:32px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:12px}
-        .prod-table{width:100%;border-collapse:collapse;font-size:12px}
+        .prod-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
         .prod-table th{background:#1a4a2e;color:#fff;padding:8px 12px;text-align:left;font-weight:600}
-        .prod-table td{padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#333}
+        .prod-table td{padding:8px 12px;border-bottom:1px solid #f0f0f0;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .prod-table tr:hover td{background:#f8fffe;cursor:pointer}
         .prod-table tr:nth-child(even) td{background:#fafffe}
         .prod-table tr:nth-child(even):hover td{background:#f0f8f0}
@@ -408,14 +408,14 @@ tr:hover td{background:#f8fcf8}
           <table class="prod-table" id="prod-tabla">
             <thead>
               <tr>
-                <th>RUT</th>
-                <th>Nombre / Razón Social</th>
-                <th>Especie Principal</th>
-                <th>Región</th>
-                <th>Teléfono</th>
-                <th>Estado</th>
-                <th>Kg Totales</th>
-                <th>Ingresado por</th>
+                <th style="width:11%">RUT</th>
+                <th style="width:24%">Nombre / Razón Social</th>
+                <th style="width:14%">Especie Principal</th>
+                <th style="width:11%">Región</th>
+                <th style="width:13%">Teléfono</th>
+                <th style="width:9%">Estado</th>
+                <th style="width:10%">Kg Totales</th>
+                <th style="width:8%">Ingresado por</th>
               </tr>
             </thead>
             <tbody id="prod-tbody"></tbody>
