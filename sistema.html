@@ -5080,7 +5080,7 @@ function autocomplProdRut(){
   if(prods.length===0){ drop.innerHTML=''; drop.style.display='none'; return; }
   drop.innerHTML = prods.map(function(p){
     return '<div class="agro-opt" onclick="cargarProductorFicha(\'' + p.id + '\')">' +
-      '<b>' + p.rut + '</b> <span style="color:#888;font-size:11px">' + p.nombre + '</span></div>';
+      '<span style="font-size:13px;font-weight:400;color:#1a2b20">' + p.rut + '</span> <span style="color:#888;font-size:13px;font-weight:400">' + p.nombre + '</span></div>';
   }).join('');
   drop.style.display='block';
 }
@@ -5095,7 +5095,7 @@ function autocomplProdNombre(){
   if(prods.length===0){ drop.innerHTML=''; drop.style.display='none'; return; }
   drop.innerHTML = prods.map(function(p){
     return '<div class="agro-opt" onclick="cargarProductorFicha(\'' + p.id + '\')">' +
-      '<b>' + p.nombre + '</b> <span style="color:#888;font-size:11px">' + p.rut + '</span></div>';
+      '<span style="font-size:13px;font-weight:400;color:#1a2b20">' + p.nombre + '</span> <span style="color:#888;font-size:13px;font-weight:400">' + p.rut + '</span></div>';
   }).join('');
   drop.style.display='block';
 }
@@ -5132,7 +5132,7 @@ function buscarProductorInput(){
   if(res.length===0){ drop.innerHTML=''; drop.style.display='none'; return; }
   drop.innerHTML = res.map(function(p){
     return '<div class="agro-opt" onclick="cargarProductorFicha(\'' + p.id + '\')">'+
-      '<b>'+(p.nombre||'')+'</b> <span style="color:#888;font-size:11px">'+p.rut+'</span></div>';
+      '<span style="font-size:13px;font-weight:400;color:#1a2b20">'+(p.nombre||'')+'</span> <span style="color:#888;font-size:13px;font-weight:400">'+p.rut+'</span></div>';
   }).join('');
   drop.style.display='block';
 }
