@@ -6177,6 +6177,36 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 </script>
 
+<script>
+// ===== TOOLTIP AUTOMÁTICO PARA CONTENIDO CORTADO =====
+// Si el texto de un campo, celda de tabla o resultado de búsqueda es más largo
+// de lo que cabe visualmente, al pasar el mouse por encima se muestra completo
+// (usando el tooltip nativo del navegador, sin alterar el diseño de la pantalla).
+(function(){
+  function textoDe(el){
+    if(el.tagName==='SELECT'){
+      var op=el.options[el.selectedIndex];
+      return op?op.text:'';
+    }
+    if('value' in el && el.tagName!=='TD') return el.value||'';
+    return el.textContent||'';
+  }
+  function actualizarTooltipsOverflow(){
+    var raiz = document.querySelector('.module.active') || document.getElementById('portal');
+    if(!raiz) return;
+    raiz.querySelectorAll('input, textarea, select, td, .agro-opt').forEach(function(el){
+      var texto = textoDe(el).trim();
+      if(!texto){ if(el.title) el.removeAttribute('title'); return; }
+      var desborda = el.scrollWidth > el.clientWidth + 1;
+      if(desborda){ if(el.title!==texto) el.title = texto; }
+      else if(el.title===texto){ el.removeAttribute('title'); }
+    });
+  }
+  setInterval(actualizarTooltipsOverflow, 700);
+  document.addEventListener('input', actualizarTooltipsOverflow);
+})();
+</script>
+
 
 </body>
 </html>
