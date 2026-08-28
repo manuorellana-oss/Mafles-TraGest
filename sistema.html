@@ -3631,10 +3631,10 @@ window.dispatchEvent(new Event('fbReady'));
 // Este mapa solo asocia el correo autenticado con su nombre y rol dentro del sistema.
 let USUARIOS = {
   'manuorellana@gmail.com': {rol:'gerencial', admin:true,  nombre:'Manuel Orellana'},
-  's.arauna@mafles.cl':     {rol:'gerencial', admin:false, nombre:'Sebastian Arauna'},
-  'k.meza@mafles.cl':       {rol:'gerencial', admin:false, nombre:'Katia Meza'},
-  'sn.arauna@mafles.cl':    {rol:'gerencial', admin:false, nombre:'Sandra Arauna'},
-  'kn.arauna@mafles.cl':    {rol:'gerencial', admin:false, nombre:'Keren Arauna'},
+  's.arauna@mafles.cl':     {rol:'director',  admin:false, nombre:'Sebastian Arauna'},
+  'k.meza@mafles.cl':       {rol:'operativo', admin:false, nombre:'Katia Meza'},
+  'sn.arauna@mafles.cl':    {rol:'operativo', admin:false, nombre:'Sandra Arauna'},
+  'kn.arauna@mafles.cl':    {rol:'operativo', admin:false, nombre:'Keren Arauna'},
   'a.reyes@mafles.cl':      {rol:'proceso',   admin:false, nombre:'Aida Reyes'}
 };
 window.USUARIOS = USUARIOS;
@@ -4156,7 +4156,7 @@ function activarSesion(u,ud){
   window._vistaProceso = (ud.rol === 'proceso');
   window._usuarioActual = ud.nombre;
   document.getElementById('tb-username').textContent=ud.nombre;
-  document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':(ud.rol==='proceso'?'Jefa de Proceso':'Operativo');
+ document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':(ud.rol==='proceso'?'Jefa de Proceso':(ud.rol==='director'?'Director':'Operativo'));
   if(ud.rol==='gerencial') document.getElementById('tab-precio').classList.remove('hidden-tab');
   if(window._esAdmin) document.getElementById('tab-auditoria').classList.remove('hidden-tab');
   // El respaldo a Drive queda disponible solo para el administrador (cuenta personal vinculada)
