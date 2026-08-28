@@ -320,10 +320,7 @@ async function cargarTrazabilidadPartida(app,db,cont){
   const campoSnap=await getDocs(campoQ);
   const agros=campoSnap.docs.map(d=>d.data());
 
-  const todosQ=query(collection(db,'recepciones'),orderBy('_ts','asc'));
-  const todosSnap=await getDocs(todosQ);
-  const idx=todosSnap.docs.findIndex(d=>d.data().id===recepId);
-  const nCorr=String(idx>=0?idx+1:1).padStart(4,'0');
+  const nCorr=String(r.correlativo || 0).padStart(4,'0');
   document.getElementById('hdr-title').textContent='TRZ-'+nCorr+' — '+r.especie;
 
   datosGlobales=r;
