@@ -4185,7 +4185,7 @@ function activarSesion(u,ud){
   } else {
     document.body.classList.remove('vista-proceso');
     document.querySelectorAll('.nav-tab').forEach(function(t){ t.style.display = ''; });
-    if(ud.rol!=='gerencial') document.getElementById('tab-precio').classList.add('hidden-tab');
+    if(ud.rol==='gerencial' || ud.rol==='director' || ud.rol==='operativo') document.getElementById('tab-precio').classList.remove('hidden-tab');
     if(!window._esAdmin) document.getElementById('tab-auditoria').classList.add('hidden-tab');
   }
   document.getElementById('portal').style.display='none';
