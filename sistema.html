@@ -4455,7 +4455,8 @@ window.saveRecepcion=function(){
     obs:document.getElementById('r-obs').value,
     responsable:document.getElementById('r-responsable').value.trim(),
     eval:eval_data, estado:'Recibido',
-    creadoPor: window._usuarioActual || '', _tsCreacion: Date.now()
+        creadoPor: window._usuarioActual || '', _tsCreacion: Date.now(),
+    correlativo: DATA.recepciones.length + 1
   };
   DATA.recepciones.push(rec);
   fbSave('recepciones',rec);
