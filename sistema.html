@@ -1231,6 +1231,16 @@ tr:hover td{background:#f8fcf8}
 
     <!-- AUDITORÍA (solo administrador) -->
     <div class="module" id="mod-auditoria">
+      <div class="card" style="border:1px solid #e0a800;background:#fffbea;margin-bottom:16px">
+        <div class="card-title"><i class="ti ti-tools"></i> Migración de IDs (uso único)</div>
+        <p style="font-size:12.5px;color:#666;margin-bottom:10px">
+          Herramienta técnica temporal. Convierte los registros antiguos de <b>recepciones</b> y <b>consolidadas</b>
+          para que su ID en Firestore coincida con su ID interno (el que usa el QR). Ejecútala una sola vez.
+          Puedes correrla varias veces sin problema: si un registro ya está migrado, lo salta.
+        </p>
+        <button class="btn btn-secondary" onclick="migrarIdsFirestore()">Migrar IDs ahora</button>
+        <div id="migracion-log" style="font-size:12px;color:#444;margin-top:10px;white-space:pre-line"></div>
+      </div>
       <div class="card">
         <div class="card-title"><i class="ti ti-shield-lock"></i> Auditoría de Eliminaciones</div>
         <p style="font-size:12.5px;color:#666;margin-bottom:12px">
@@ -3805,9 +3815,47 @@ function showStatus(txt){const s=document.getElementById('status-bar');document.
 async function fbSave(col,data){
   try{
     if(!window._fbReady){pendQueue.push({col,data});return}
-    await window._addDoc(window._col(window._db,col),{...data,_ts:Date.now()});
+    if(data && data.id){
+      // Usamos el id interno como ID del documento en Firestore.
+      // Esto permite buscar por QR con getDoc() directo, sin necesitar list:true.
+      await window._setDoc(window._doc(window._db,col,String(data.id)),{...data,_ts:Date.now()});
+    }else{
+      // Colecciones sin id interno propio (ej: auditoria) siguen igual que antes.
+      await window._addDoc(window._col(window._db,col),{...data,_ts:Date.now()});
+    }
     showStatus('Guardado en Firebase ✓');
   }catch(e){console.error(e);showStatus('Guardado local (sin conexión)')}
+}
+async function migrarIdsFirestore(){
+  const logEl = document.getElementById('migracion-log');
+  function log(txt){ if(logEl) logEl.textContent += txt + '\n'; console.log(txt); }
+  if(logEl) logEl.textContent='';
+  if(!window._fbReady){ log('⚠ Firebase no está listo todavía. Espera unos segundos y vuelve a intentar.'); return; }
+  if(!confirm('Esto va a revisar recepciones y consolidadas y reescribir los registros antiguos bajo su ID interno. ¿Continuar?')) return;
+  log('Iniciando migración...');
+  const colecciones = ['recepciones','consolidadas'];
+  for(const col of colecciones){
+    let migrados=0, yaOk=0, sinId=0;
+    let snap;
+    try{
+      snap = await window._getDocs(window._col(window._db,col));
+    }catch(e){ log('✗ Error leyendo '+col+': '+e.message); continue; }
+    for(const d of snap.docs){
+      const data = d.data();
+      if(!data.id){ sinId++; continue; }
+      const idDeseado = String(data.id);
+      if(d.id === idDeseado){ yaOk++; continue; }
+      try{
+        await window._setDoc(window._doc(window._db,col,idDeseado), data);
+        await window._deleteDoc(window._doc(window._db,col,d.id));
+        migrados++;
+      }catch(e){
+        log('✗ Error migrando '+col+'/'+d.id+': '+e.message);
+      }
+    }
+    log('✓ '+col+': '+migrados+' migrados, '+yaOk+' ya estaban ok, '+sinId+' sin id (omitidos)');
+  }
+  log('Migración terminada. Ahora puedes recargar el sistema para ver los datos actualizados.');
 }
 async function fbLoad(col){
   try{
