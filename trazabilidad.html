@@ -82,6 +82,7 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 
 const firebaseConfig = {
   apiKey:"AIzaSyClBEniGH5SaGCZQ6w_IXi2NQ_uCO329JM",
@@ -307,11 +308,9 @@ async function cargarTrazabilidadPartida(app,db,cont){
   }
   const r=recSnap.data();
 
-  const campoQ=query(collection(db,'campo'),
-    where('proveedor','==',r.proveedor),
-    where('especie','==',r.especie));
-  const campoSnap=await getDocs(campoQ);
-  const agros=campoSnap.docs.map(d=>d.data());
+  const obtenerAgroquimicos = httpsCallable(getFunctions(app,'us-central1'), 'obtenerAgroquimicos');
+  const agrosResp = await obtenerAgroquimicos({proveedor:r.proveedor, especie:r.especie});
+  const agros = agrosResp.data.items || [];
 
   const nCorr=String(r.correlativo || 0).padStart(4,'0');
   document.getElementById('hdr-title').textContent='TRZ-'+nCorr+' — '+r.especie;
@@ -341,11 +340,9 @@ async function cargarTrazabilidadConsolidada(app,db,cont){
       const rSnap=await getDoc(doc(db,'recepciones',p.partidaId));
       if(rSnap.exists()){ rutProv=rSnap.data().rut||''; guiaProv=rSnap.data().guia||''; }
     }catch(e){}
-    const campoQ=query(collection(db,'campo'),
-      where('proveedor','==',p.proveedor),
-      where('especie','==',cc.especie));
-    const campoSnap=await getDocs(campoQ);
-    const agros=campoSnap.docs.map(d=>d.data());
+    const obtenerAgroquimicos = httpsCallable(getFunctions(app,'us-central1'), 'obtenerAgroquimicos');
+    const agrosResp = await obtenerAgroquimicos({proveedor:p.proveedor, especie:cc.especie});
+    const agros = agrosResp.data.items || [];
     detalle.push({proveedor:p.proveedor,kilosAportados:p.kilosAportados,rut:rutProv,guia:guiaProv,agros});
   }
 
