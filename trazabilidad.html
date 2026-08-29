@@ -301,18 +301,11 @@ window.verificarClave = function(){
 
 async function cargarTrazabilidadPartida(app,db,cont){
   const recSnap=await getDoc(doc(db,'recepciones',recepId));
-  let r;
   if(!recSnap.exists()){
-    const recQ=query(collection(db,'recepciones'),where('id','==',recepId));
-    const recSnap2=await getDocs(recQ);
-    if(recSnap2.empty){
-      cont.innerHTML='<div class="error-box">⚠️ Registro no encontrado (ID: '+recepId+')</div>';
-      return;
-    }
-    r=recSnap2.docs[0].data();
-  } else {
-    r=recSnap.data();
+    cont.innerHTML='<div class="error-box">⚠️ Registro no encontrado (ID: '+recepId+')</div>';
+    return;
   }
+  const r=recSnap.data();
 
   const campoQ=query(collection(db,'campo'),
     where('proveedor','==',r.proveedor),
@@ -332,18 +325,11 @@ async function cargarTrazabilidadPartida(app,db,cont){
 
 async function cargarTrazabilidadConsolidada(app,db,cont){
   const ccSnap=await getDoc(doc(db,'consolidadas',consolidadoId));
-  let cc;
   if(!ccSnap.exists()){
-    const ccQ=query(collection(db,'consolidadas'),where('id','==',consolidadoId));
-    const ccSnap2=await getDocs(ccQ);
-    if(ccSnap2.empty){
-      cont.innerHTML='<div class="error-box">⚠️ Carga consolidada no encontrada (ID: '+consolidadoId+')</div>';
-      return;
-    }
-    cc=ccSnap2.docs[0].data();
-  } else {
-    cc=ccSnap.data();
+    cont.innerHTML='<div class="error-box">⚠️ Carga consolidada no encontrada (ID: '+consolidadoId+')</div>';
+    return;
   }
+  const cc=ccSnap.data();
 
   document.getElementById('hdr-title').textContent='Consolidado — '+cc.especie+' · '+cc.cliente;
 
