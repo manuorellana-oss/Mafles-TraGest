@@ -221,6 +221,7 @@ tr:hover td{background:#f8fcf8}
       <span id="drive-status" style="display:none;font-size:11px;color:#aaa;margin-right:8px"></span>
       <button class="btn-logout" id="btn-drive-connect" style="display:none;background:#e8f0fe;color:#1a56c4;margin-right:6px" onclick="conectarDrive()"><i class="ti ti-brand-google-drive" style="font-size:13px"></i> Conectar Drive</button>
       <button class="btn-logout" id="btn-respaldo" style="display:none;background:#e8f5e9;color:#1a4a2e;margin-right:6px" onclick="generarRespaldo()"><i class="ti ti-download" style="font-size:13px"></i> Respaldo</button>
+      <button class="btn-logout" style="margin-right:6px" onclick="abrirModalPass()"><i class="ti ti-key" style="font-size:13px"></i> Cambiar clave</button>
       <button class="btn-logout" onclick="doLogout()"><i class="ti ti-logout" style="font-size:13px"></i> Salir</button>
     </div>
   </div>
@@ -236,6 +237,30 @@ tr:hover td{background:#f8fcf8}
     <div class="nav-tab" onclick="showMod(&#39;qr&#39;,this)" data-mod="qr"><i class="ti ti-qrcode"></i> QR</div>
     <div class="nav-tab" onclick="showMod(&#39;consolidado&#39;,this);renderConsolidadoHist();" data-mod="consolidado"><i class="ti ti-stack-2"></i> Carga Consolidada</div>
     <div class="nav-tab hidden-tab" id="tab-auditoria" onclick="showMod(&#39;auditoria&#39;,this);renderAuditoria();" data-mod="auditoria"><i class="ti ti-shield-lock"></i> Auditoría</div>
+  </div>
+
+  <!-- MODAL CAMBIAR CONTRASEÑA -->
+  <div id="modal-pass-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:12px;padding:22px;width:340px;max-width:90vw;box-shadow:0 8px 30px rgba(0,0,0,.25)">
+      <h3 style="font-size:15px;font-weight:700;color:#1a4a2e;margin-bottom:14px">Cambiar contraseña</h3>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">Contraseña actual</label>
+        <input type="password" id="pass-actual" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">Contraseña nueva</label>
+        <input type="password" id="pass-nueva" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">Repetir contraseña nueva</label>
+        <input type="password" id="pass-nueva2" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div id="pass-msg" style="font-size:12px;color:#c0392b;margin-bottom:10px;display:none"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-logout" style="background:#eee;color:#333" onclick="cerrarModalPass()">Cancelar</button>
+        <button class="btn-logout" style="background:#2e7d52;color:#fff" onclick="confirmarCambioPass()">Guardar</button>
+      </div>
+    </div>
   </div>
 
   <div class="content">
@@ -3582,7 +3607,7 @@ var qrcode = function() {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, setDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const cfg = {
   apiKey:"AIzaSyClBEniGH5SaGCZQ6w_IXi2NQ_uCO329JM",
@@ -3599,6 +3624,9 @@ window._db = db;
 window._auth = auth;
 window._signInWithEmailAndPassword = signInWithEmailAndPassword;
 window._signOut = signOut;
+window._updatePassword = updatePassword;
+window._reauthenticateWithCredential = reauthenticateWithCredential;
+window._EmailAuthProvider = EmailAuthProvider;
 window._col = collection;
 window._addDoc = addDoc;
 window._setDoc = setDoc;
@@ -3800,6 +3828,46 @@ function fmtNum(n){return Number(n||0).toLocaleString('es-CL')}
 function today(){return new Date().toISOString().split('T')[0]}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function showStatus(txt){const s=document.getElementById('status-bar');document.getElementById('status-txt').textContent=txt;s.classList.add('show');setTimeout(()=>s.classList.remove('show'),2500)}
+
+// ===== CAMBIAR CONTRASEÑA =====
+window.abrirModalPass = function(){
+  document.getElementById('pass-actual').value='';
+  document.getElementById('pass-nueva').value='';
+  document.getElementById('pass-nueva2').value='';
+  document.getElementById('pass-msg').style.display='none';
+  document.getElementById('modal-pass-overlay').style.display='flex';
+};
+window.cerrarModalPass = function(){
+  document.getElementById('modal-pass-overlay').style.display='none';
+};
+window.confirmarCambioPass = async function(){
+  const msg=document.getElementById('pass-msg');
+  const mostrarError=(t)=>{msg.textContent=t;msg.style.display='block';};
+  const actual=document.getElementById('pass-actual').value;
+  const nueva=document.getElementById('pass-nueva').value;
+  const nueva2=document.getElementById('pass-nueva2').value;
+  if(!actual||!nueva||!nueva2){mostrarError('Completa los 3 campos.');return}
+  if(nueva.length<8){mostrarError('La nueva contraseña debe tener al menos 8 caracteres.');return}
+  if(nueva!==nueva2){mostrarError('Las contraseñas nuevas no coinciden.');return}
+  const user=window._auth && window._auth.currentUser;
+  if(!user){mostrarError('No hay sesión activa. Vuelve a iniciar sesión.');return}
+  try{
+    const cred=window._EmailAuthProvider.credential(user.email,actual);
+    await window._reauthenticateWithCredential(user,cred);
+    await window._updatePassword(user,nueva);
+    cerrarModalPass();
+    showStatus('Contraseña actualizada ✓');
+  }catch(e){
+    console.error(e);
+    if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
+      mostrarError('La contraseña actual es incorrecta.');
+    }else if(e.code==='auth/too-many-requests'){
+      mostrarError('Demasiados intentos. Intenta de nuevo más tarde.');
+    }else{
+      mostrarError('No se pudo cambiar la contraseña. Intenta de nuevo.');
+    }
+  }
+};
 
 // ===== FIREBASE =====
 async function fbSave(col,data){
