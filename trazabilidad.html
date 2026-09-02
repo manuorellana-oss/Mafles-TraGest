@@ -13,7 +13,6 @@
   .header-txt .title{font-size:18px;font-weight:700;color:#fff;margin-top:2px}
   .badge-vista{display:inline-block;font-size:10px;padding:2px 10px;border-radius:20px;margin-top:4px;font-weight:600}
   .badge-publica{background:rgba(125,214,154,0.2);color:#7dd69a;border:1px solid rgba(125,214,154,0.3)}
-  .badge-privada{background:rgba(255,200,100,0.2);color:#ffc864;border:1px solid rgba(255,200,100,0.3)}
   .content{max-width:520px;margin:0 auto;padding:16px}
   .card{background:#fff;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
   .section-title{font-size:11px;font-weight:700;color:#1a4a2e;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #e8f5e9}
@@ -34,18 +33,6 @@
   .error-box{background:#fde8e8;border:1px solid #f5c6c6;border-radius:8px;padding:16px;color:#c0392b;text-align:center;margin-top:20px}
   .loading{text-align:center;color:#888;padding:40px;font-size:14px}
   .footer{text-align:center;font-size:11px;color:#aaa;margin-top:8px}
-  .btn-acceso{width:100%;padding:12px;background:#f8fcf8;border:1px solid #c0d8c0;border-radius:8px;color:#1a4a2e;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
-  .btn-acceso:hover{background:#e8f5e9}
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
-  .modal-overlay.show{display:flex}
-  .modal{background:#fff;border-radius:14px;padding:24px;width:90%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
-  .modal-title{font-size:16px;font-weight:700;color:#1a4a2e;margin-bottom:6px}
-  .modal-sub{font-size:12px;color:#888;margin-bottom:16px}
-  .modal input{width:100%;height:42px;padding:0 12px;border:1px solid #d0e8d0;border-radius:8px;font-size:14px;margin-bottom:12px}
-  .modal-err{color:#c0392b;font-size:12px;margin-bottom:8px;display:none}
-  .btn-ingresar{width:100%;height:42px;background:#1a4a2e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-  .btn-cancelar{width:100%;height:36px;background:none;border:none;color:#888;font-size:13px;cursor:pointer;margin-top:6px}
-  .vista-privada-banner{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#6d4c00;display:flex;align-items:center;gap:8px}
 </style>
 </head>
 <body>
@@ -61,22 +48,7 @@
 
 <div class="content">
   <div id="main-content"><div class="loading">⏳ Cargando...</div></div>
-  <div id="btn-acceso-wrap" style="display:none">
-    <button class="btn-acceso" onclick="mostrarModalAcceso()">🔒 Acceso MAFLES</button>
-  </div>
   <div class="footer" id="footer-txt">Sistema de Trazabilidad MAFLES · v8.0</div>
-</div>
-
-<!-- Modal acceso privado -->
-<div class="modal-overlay" id="modal-acceso">
-  <div class="modal">
-    <div class="modal-title">🔒 Acceso MAFLES</div>
-    <div class="modal-sub">Ingresa la clave para ver la ficha completa</div>
-    <input type="password" id="input-clave" placeholder="Clave de acceso" onkeydown="if(event.key===&#39;Enter&#39;)verificarClave()">
-    <div class="modal-err" id="modal-err">Clave incorrecta</div>
-    <button class="btn-ingresar" onclick="verificarClave()">Ingresar</button>
-    <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
-  </div>
 </div>
 
 <script type="module">
@@ -93,12 +65,9 @@ const firebaseConfig = {
   appId:"1:298356574973:web:b1d17024aad7ffae8b8c94"
 };
 
-const CLAVE_PRIVADA = 'mafles2026';
 const params = new URLSearchParams(window.location.search);
 const recepId = params.get('id');
 const consolidadoId = params.get('consolidado');
-let datosGlobales = null;
-let agrosGlobales = [];
 
 function fmtFecha(s){
   if(!s)return 'N/A';
@@ -161,50 +130,6 @@ function renderVistaPublica(r, agros){
   return html;
 }
 
-function renderVistaPrivada(r, agros){
-  const ev=estadoVisual(r.eval);
-  let html='<div class="vista-privada-banner">🔓 Vista privada — Personal MAFLES</div>';
-
-  html+='<div class="card">';
-  html+='<div class="section-title">Datos de recepción</div>';
-  html+='<div class="row"><span class="lbl">Especie</span><span class="val">'+r.especie+'</span></div>';
-  html+='<div class="row"><span class="lbl">Cantidad bandejas</span><span class="val">'+(r.bandejas||0)+'</span></div>';
-  if(r.kg) html+='<div class="row"><span class="lbl">Kilos recepcionados</span><span class="val">'+Number(r.kg).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+' kg</span></div>';
-  html+='<div class="row"><span class="lbl">Proveedor</span><span class="val">'+r.proveedor+'</span></div>';
-  html+='<div class="row"><span class="lbl">RUT proveedor</span><span class="val">'+(r.rut||'N/A')+'</span></div>';
-  html+='<div class="row"><span class="lbl">Fecha recepción</span><span class="val">'+fmtFecha(r.fecha)+'</span></div>';
-  html+='<div class="row"><span class="lbl">N° guía productor</span><span class="val">'+(r.guia||'N/A')+'</span></div>';
-  html+='<div class="row"><span class="lbl">Zona recolección</span><span class="val">'+(r.campo_cuartel||'N/A')+'</span></div>';
-  html+='<div class="row"><span class="lbl">Responsable eval.</span><span class="val">'+(r.responsable||'N/A')+'</span></div>';
-  if(r.especie==='Arándano'&&r.sag_prod){
-    html+='<div class="row"><span class="lbl">Código SAG productor</span><span class="val">'+r.sag_prod+'</span></div>';
-  }
-  html+='<div class="row"><span class="lbl">Estado visual</span><span class="val"><span class="badge '+ev.cls+'">'+ev.txt+'</span></span></div>';
-  html+='</div>';
-
-  html+='<div class="card">';
-  html+='<div class="section-title">Agroquímicos aplicados al cultivo</div>';
-  if(agros.length===0){
-    html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
-  }else{
-    html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Fecha Aplic.</th><th>Carencia</th><th>F. Cosecha mín.</th><th>Cumple</th></tr></thead><tbody>';
-    agros.forEach(a=>{
-      const cum=cumpleCarencia(a.cosecha, r.fecha);
-      html+='<tr>';
-      html+='<td><strong>'+a.agroquimico+'</strong></td>';
-      html+='<td>'+(a.sag||'-')+'</td>';
-      html+='<td>'+fmtFecha(a.fecha)+'</td>';
-      html+='<td>'+(a.carencia||'-')+'d</td>';
-      html+='<td>'+fmtFecha(a.cosecha)+'</td>';
-      html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
-      html+='</tr>';
-    });
-    html+='</tbody></table></div>';
-  }
-  html+='</div>';
-  return html;
-}
-
 function renderVistaConsolidadaPublica(cc, detalle){
   let html='<div class="card">';
   html+='<div class="section-title">Carga consolidada</div>';
@@ -237,68 +162,6 @@ function renderVistaConsolidadaPublica(cc, detalle){
   return html;
 }
 
-function renderVistaConsolidadaPrivada(cc, detalle){
-  let html='<div class="vista-privada-banner">🔓 Vista privada — Personal MAFLES</div>';
-  html+='<div class="card">';
-  html+='<div class="section-title">Carga consolidada</div>';
-  html+='<div class="row"><span class="lbl">Cliente</span><span class="val">'+cc.cliente+'</span></div>';
-  html+='<div class="row"><span class="lbl">Especie</span><span class="val">'+cc.especie+'</span></div>';
-  html+='<div class="row"><span class="lbl">Fecha despacho</span><span class="val">'+fmtFecha(cc.fechaDespacho)+'</span></div>';
-  html+='<div class="row"><span class="lbl">Kilos totales</span><span class="val">'+fmtNum(cc.kilosTotales)+' kg</span></div>';
-  if(cc.razonSocialEmisora) html+='<div class="row"><span class="lbl">Razón social</span><span class="val">'+cc.razonSocialEmisora+'</span></div>';
-  if(cc.referenciaGuia) html+='<div class="row"><span class="lbl">Referencia/Guía</span><span class="val">'+cc.referenciaGuia+'</span></div>';
-  html+='</div>';
-  detalle.forEach(d=>{
-    html+='<div class="card">';
-    html+='<div class="section-title">Partida — '+d.proveedor+' ('+fmtNum(d.kilosAportados)+' kg)</div>';
-    html+='<div class="row"><span class="lbl">RUT proveedor</span><span class="val">'+(d.rut||'N/A')+'</span></div>';
-    html+='<div class="row"><span class="lbl">N° guía productor</span><span class="val">'+(d.guia||'N/A')+'</span></div>';
-    if(!d.agros.length){
-      html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
-    }else{
-      html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Fecha Aplic.</th><th>Carencia</th><th>F. Cosecha mín.</th><th>Cumple</th></tr></thead><tbody>';
-      d.agros.forEach(a=>{
-        const cum=cumpleCarencia(a.cosecha, cc.fechaDespacho);
-        html+='<tr>';
-        html+='<td><strong>'+a.agroquimico+'</strong></td>';
-        html+='<td>'+(a.sag||'-')+'</td>';
-        html+='<td>'+fmtFecha(a.fecha)+'</td>';
-        html+='<td>'+(a.carencia||'-')+'d</td>';
-        html+='<td>'+fmtFecha(a.cosecha)+'</td>';
-        html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
-        html+='</tr>';
-      });
-      html+='</tbody></table></div>';
-    }
-    html+='</div>';
-  });
-  return html;
-}
-
-window.mostrarModalAcceso = function(){
-  document.getElementById('modal-acceso').classList.add('show');
-  setTimeout(()=>document.getElementById('input-clave').focus(),100);
-}
-window.cerrarModal = function(){
-  document.getElementById('modal-acceso').classList.remove('show');
-  document.getElementById('input-clave').value='';
-  document.getElementById('modal-err').style.display='none';
-}
-window.verificarClave = function(){
-  const clave=document.getElementById('input-clave').value;
-  if(clave===CLAVE_PRIVADA){
-    cerrarModal();
-    const html = consolidadoId
-      ? renderVistaConsolidadaPrivada(datosGlobales, agrosGlobales)
-      : renderVistaPrivada(datosGlobales, agrosGlobales);
-    document.getElementById('main-content').innerHTML=html;
-    document.getElementById('badge-vista').textContent='Vista privada';
-    document.getElementById('badge-vista').className='badge-vista badge-privada';
-    document.getElementById('btn-acceso-wrap').style.display='none';
-  } else {
-    document.getElementById('modal-err').style.display='block';
-  }
-}
 
 async function cargarTrazabilidadPartida(app,db,cont){
   const recSnap=await getDoc(doc(db,'recepciones',recepId));
@@ -315,11 +178,7 @@ async function cargarTrazabilidadPartida(app,db,cont){
   const nCorr=String(r.correlativo || 0).padStart(4,'0');
   document.getElementById('hdr-title').textContent='TRZ-'+nCorr+' — '+r.especie;
 
-  datosGlobales=r;
-  agrosGlobales=agros;
-
   cont.innerHTML=renderVistaPublica(r, agros);
-  document.getElementById('btn-acceso-wrap').style.display='block';
 }
 
 async function cargarTrazabilidadConsolidada(app,db,cont){
@@ -332,25 +191,16 @@ async function cargarTrazabilidadConsolidada(app,db,cont){
 
   document.getElementById('hdr-title').textContent='Consolidado — '+cc.especie+' · '+cc.cliente;
 
-  // Para cada partida incluida, traer su recepción (RUT, guía) y sus agroquímicos de campo
+  // Para cada partida incluida, traer sus agroquímicos de campo
   const detalle=[];
   for(const p of (cc.partidasIncluidas||[])){
-    let rutProv='',guiaProv='';
-    try{
-      const rSnap=await getDoc(doc(db,'recepciones',p.partidaId));
-      if(rSnap.exists()){ rutProv=rSnap.data().rut||''; guiaProv=rSnap.data().guia||''; }
-    }catch(e){}
     const obtenerAgroquimicos = httpsCallable(getFunctions(app,'us-central1'), 'obtenerAgroquimicos');
     const agrosResp = await obtenerAgroquimicos({proveedor:p.proveedor, especie:cc.especie});
     const agros = agrosResp.data.items || [];
-    detalle.push({proveedor:p.proveedor,kilosAportados:p.kilosAportados,rut:rutProv,guia:guiaProv,agros});
+    detalle.push({proveedor:p.proveedor,kilosAportados:p.kilosAportados,agros});
   }
 
-  datosGlobales=cc;
-  agrosGlobales=detalle;
-
   cont.innerHTML=renderVistaConsolidadaPublica(cc, detalle);
-  document.getElementById('btn-acceso-wrap').style.display='block';
 }
 
 async function cargarTrazabilidad(){
