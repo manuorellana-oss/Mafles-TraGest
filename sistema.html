@@ -236,6 +236,7 @@ tr:hover td{background:#f8fcf8}
     <div class="nav-tab" id="tab-precio" onclick="showMod(&#39;precio&#39;,this)" data-mod="precio"><i class="ti ti-currency-dollar"></i> Precio de Venta</div>
     <div class="nav-tab" onclick="showMod(&#39;qr&#39;,this)" data-mod="qr"><i class="ti ti-qrcode"></i> QR</div>
     <div class="nav-tab" onclick="showMod(&#39;consolidado&#39;,this);renderConsolidadoHist();" data-mod="consolidado"><i class="ti ti-stack-2"></i> Carga Consolidada</div>
+    <div class="nav-tab" onclick="showMod(&#39;liquidaciones&#39;,this)" data-mod="liquidaciones"><i class="ti ti-receipt"></i> Liquidaciones</div>
     <div class="nav-tab hidden-tab" id="tab-auditoria" onclick="showMod(&#39;auditoria&#39;,this);renderAuditoria();" data-mod="auditoria"><i class="ti ti-shield-lock"></i> Auditoría</div>
   </div>
 
@@ -575,6 +576,22 @@ tr:hover td{background:#f8fcf8}
           <div class="form-group"><label>Fecha Recepción</label><input type="date" id="r-fecha"></div>
           <div class="form-group"><label>N° Guía Despacho</label><input type="text" id="r-guia" placeholder="GD-0001"></div>
           <div class="form-group"><label>Kg Brutos Recibidos</label><input type="number" id="r-kg" placeholder="0.0" step="0.1"></div>
+          <div class="form-group"><label>Kg Netos Recibidos</label><input type="number" id="r-kg-neto" placeholder="0.0" step="0.1"></div>
+          <div class="form-group">
+            <label>Estado Agrícola</label>
+            <select id="r-estado-agricola">
+              <option value="">Seleccionar...</option>
+              <option>Convencional</option><option>Orgánico</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Variedad</label><input type="text" id="r-variedad" placeholder="Ej: Heritage, Navajo, Crimson..."></div>
+          <div class="form-group">
+            <label>Conservación / Calidad</label>
+            <select id="r-conservacion">
+              <option value="">Seleccionar...</option>
+              <option>Fresco</option><option>IQF</option><option>Block</option><option>Congelado</option><option>Otro</option>
+            </select>
+          </div>
           <div class="form-group"><label>N° Bandejas</label><input type="number" id="r-bandejas" placeholder="0" min="0"></div>
           <div class="form-group"><label>Zona de Recolección</label><input type="text" id="r-campo" placeholder="Ej: Cuartel Norte - Sector 3"></div>
           <div class="form-group" id="grupo-sag-prod" style="display:none">
@@ -636,7 +653,7 @@ tr:hover td{background:#f8fcf8}
           <button class="btn btn-export" onclick="exportarExcel(&#39;recepciones&#39;,&#39;tbl-rec&#39;)"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         </div>
         <div class="tbl-wrap"><table id="tbl-rec">
-          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Kg Brutos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Calidad</th><th>Kg Brutos</th><th>Kg Netos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th></th></tr></thead>
           <tbody id="tbody-rec">
     <tr>
       <td>09/06/2026</td><td>matias abdala</td><td>Arándano</td>
@@ -1252,6 +1269,37 @@ tr:hover td{background:#f8fcf8}
         </table></div>
       </div>
 
+    </div>
+
+    <!-- LIQUIDACIONES -->
+    <div class="module" id="mod-liquidaciones">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-receipt"></i> Generar Liquidación</div>
+        <div class="form-grid">
+          <div class="form-group" style="position:relative">
+            <label>Buscar Productor (RUT o nombre)</label>
+            <input type="text" id="liq-buscar-prod" placeholder="Escribe RUT o nombre..." oninput="buscarProductorLiq()" autocomplete="off">
+            <div class="agro-dropdown" id="drop-liq-prod"></div>
+          </div>
+          <div class="form-group"><label>Fecha desde</label><input type="date" id="liq-fecha-desde"></div>
+          <div class="form-group"><label>Fecha hasta</label><input type="date" id="liq-fecha-hasta"></div>
+        </div>
+        <div id="liq-prod-seleccionado" style="display:none;margin:.5rem 0;padding:8px 12px;background:#eef7ee;border-radius:8px;font-size:13px">
+          <b>Productor seleccionado:</b> <span id="liq-prod-nombre"></span> — <span id="liq-prod-rut"></span>
+          <button class="btn btn-secondary" style="height:26px;font-size:11px;margin-left:10px;padding:0 8px" onclick="limpiarSeleccionProdLiq()">Cambiar</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="buscarRecepcionesPendientesLiq()"><i class="ti ti-search"></i> Buscar Recepciones Pendientes</button>
+        </div>
+      </div>
+
+      <div class="card" id="liq-resultados-card" style="display:none">
+        <div class="card-title"><i class="ti ti-list"></i> Recepciones Pendientes de Liquidación</div>
+        <div class="tbl-wrap"><table id="tbl-liq-pendientes">
+          <thead><tr><th>Fecha</th><th>Especie</th><th>Calidad</th><th>Guía</th><th>Kg Brutos</th><th>Kg Netos</th></tr></thead>
+          <tbody id="tbody-liq-pendientes"></tbody>
+        </table></div>
+      </div>
     </div>
 
     <!-- AUDITORÍA (solo administrador) -->
@@ -4524,12 +4572,17 @@ window.saveRecepcion=function(){
     especie:esp,sag_prod:esp==='Arándano'?(document.getElementById('r-sag-prod').value.trim()||''):'',
     guia:document.getElementById('r-guia').value,
     kg:parseFloat(document.getElementById('r-kg').value)||0,
+    kgNeto:parseFloat(document.getElementById('r-kg-neto').value)||0,
+    estadoAgricola:document.getElementById('r-estado-agricola').value,
+    variedad:document.getElementById('r-variedad').value.trim(),
+    conservacion:document.getElementById('r-conservacion').value,
     campo_cuartel:document.getElementById('r-campo').value,
     envase:document.getElementById('r-envase').value,
     bandejas:parseInt(document.getElementById('r-bandejas').value)||0,
     obs:document.getElementById('r-obs').value,
     responsable:document.getElementById('r-responsable').value.trim(),
     eval:eval_data, estado:'Recibido',
+    estadoLiquidacion:'Pendiente', liquidacionFolio:'',
         creadoPor: window._usuarioActual || '', _tsCreacion: Date.now(),
     correlativo: DATA.recepciones.length + 1
   };
@@ -4540,7 +4593,9 @@ window.saveRecepcion=function(){
   showStatus('Recepción guardada ✓');
 }
 window.limpiarRecepcion=function(){
-  ['r-prov','r-rut','r-guia','r-kg','r-campo','r-obs','r-envase','r-bandejas','r-sag-prod','r-responsable'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['r-prov','r-rut','r-guia','r-kg','r-kg-neto','r-variedad','r-campo','r-obs','r-envase','r-bandejas','r-sag-prod','r-responsable'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  var elEstadoAgro=document.getElementById('r-estado-agricola');if(elEstadoAgro)elEstadoAgro.value='';
+  var elConserv=document.getElementById('r-conservacion');if(elConserv)elConserv.value='';
   var grupo=document.getElementById('grupo-sag-prod');if(grupo)grupo.style.display='none';
   document.getElementById('r-esp').value='';
   document.getElementById('r-fecha').value=today();
@@ -4573,11 +4628,12 @@ window.renderRecepcionHist=function(){
   document.getElementById('tbody-rec').innerHTML=fil.map(r=>`
     <tr>
       <td>${fmtFecha(r.fecha)}</td><td>${r.proveedor}</td><td>${r.especie}</td>
-      <td>${fmtNum(r.kg)} kg</td><td>${r.bandejas||0}</td><td>${r.guia||'-'}</td>
+      <td style="font-size:11px;color:#555">${[r.estadoAgricola,r.variedad,r.conservacion].filter(Boolean).join(' · ')||'-'}</td>
+      <td>${fmtNum(r.kg)} kg</td><td>${fmtNum(r.kgNeto)} kg</td><td>${r.bandejas||0}</td><td>${r.guia||'-'}</td>
       <td><span class="badge badge-green">${r.estado||'Recibido'}</span></td>
       <td style="font-size:11px;color:#888">${r.creadoPor||'-'}</td>
       <td><button class="btn btn-danger" style="height:30px;font-size:15px;padding:0 10px;min-width:36px" onclick="delRec('${r.id}')">🗑️</button></td>
-    </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
+    </tr>`).join('')||'<tr><td colspan="10" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
 }
 window.delRecEnv=async function(id){
   if(!confirm('¿Eliminar este ingreso de envases?'))return;
@@ -5228,6 +5284,62 @@ function validarRut(rut){
   var clean = rut.replace(/[^0-9kK]/g,'');
   if(clean.length < 2) return false;
   return true;
+}
+
+// ===== LIQUIDACIONES: buscador de productor + fechas =====
+window._liqProdSel = null;
+window.buscarProductorLiq = function(){
+  var q = (document.getElementById('liq-buscar-prod').value||'').toLowerCase().trim();
+  var drop = document.getElementById('drop-liq-prod');
+  if(!q || q.length < 2){ drop.innerHTML=''; drop.style.display='none'; return; }
+  var prods = DATA.productores || [];
+  var res = prods.filter(function(p){
+    return (p.nombre||'').toLowerCase().includes(q) || (p.rut||'').toLowerCase().includes(q);
+  }).slice(0,8);
+  if(res.length===0){ drop.innerHTML='<div class="agro-opt" style="color:#aaa">Sin resultados</div>'; drop.style.display='block'; return; }
+  drop.innerHTML = res.map(function(p){
+    return '<div class="agro-opt" onclick="seleccionarProductorLiq(\'' + p.id + '\')">'+
+      '<span style="font-size:13px;font-weight:400;color:#1a2b20">'+(p.nombre||'')+'</span> <span style="color:#888;font-size:13px;font-weight:400">'+p.rut+'</span></div>';
+  }).join('');
+  drop.style.display='block';
+}
+window.seleccionarProductorLiq = function(id){
+  var p = (DATA.productores||[]).find(function(x){ return x.id===id; });
+  if(!p) return;
+  window._liqProdSel = p;
+  document.getElementById('drop-liq-prod').innerHTML='';
+  document.getElementById('drop-liq-prod').style.display='none';
+  document.getElementById('liq-buscar-prod').value='';
+  document.getElementById('liq-prod-nombre').textContent = p.nombre||'';
+  document.getElementById('liq-prod-rut').textContent = p.rut||'';
+  document.getElementById('liq-prod-seleccionado').style.display='block';
+  document.getElementById('liq-resultados-card').style.display='none';
+}
+window.limpiarSeleccionProdLiq = function(){
+  window._liqProdSel = null;
+  document.getElementById('liq-prod-seleccionado').style.display='none';
+  document.getElementById('liq-resultados-card').style.display='none';
+}
+window.buscarRecepcionesPendientesLiq = function(){
+  var p = window._liqProdSel;
+  if(!p){ alert('Primero selecciona un productor'); return; }
+  var desde = document.getElementById('liq-fecha-desde').value;
+  var hasta = document.getElementById('liq-fecha-hasta').value;
+  if(!desde || !hasta){ alert('Ingresa el rango de fechas (desde y hasta)'); return; }
+  var fil = (DATA.recepciones||[]).filter(function(r){
+    var esDeEsteProd = (r.rut && p.rut && r.rut===p.rut) || (r.proveedor && p.nombre && r.proveedor===p.nombre);
+    if(!esDeEsteProd) return false;
+    if((r.estadoLiquidacion||'Pendiente')!=='Pendiente') return false;
+    if(!r.fecha) return false;
+    if(r.fecha < desde || r.fecha > hasta) return false;
+    return true;
+  });
+  document.getElementById('liq-resultados-card').style.display='block';
+  document.getElementById('tbody-liq-pendientes').innerHTML = fil.map(function(r){
+    var calidad = [r.estadoAgricola, r.variedad, r.conservacion].filter(Boolean).join(' · ') || '-';
+    return '<tr><td>'+fmtFecha(r.fecha)+'</td><td>'+r.especie+'</td><td style="font-size:11px;color:#555">'+calidad+'</td>'+
+      '<td>'+(r.guia||'-')+'</td><td>'+fmtNum(r.kg)+' kg</td><td>'+fmtNum(r.kgNeto)+' kg</td></tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin recepciones pendientes en ese rango de fechas</td></tr>';
 }
 
 function buscarProductorInput(){
