@@ -33,7 +33,11 @@
   .error-box{background:#fde8e8;border:1px solid #f5c6c6;border-radius:8px;padding:16px;color:#c0392b;text-align:center;margin-top:20px}
   .loading{text-align:center;color:#888;padding:40px;font-size:14px}
   .footer{text-align:center;font-size:11px;color:#aaa;margin-top:8px}
+  .btn-pdf{display:block;width:100%;margin-top:10px;padding:10px;background:#1a4a2e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+  .btn-pdf:active{opacity:0.85}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -68,6 +72,8 @@ const firebaseConfig = {
 const params = new URLSearchParams(window.location.search);
 const recepId = params.get('id');
 const consolidadoId = params.get('consolidado');
+
+let _dataR=null, _dataAgros=null, _dataCC=null, _dataDetalle=null;
 
 function fmtFecha(s){
   if(!s)return 'N/A';
@@ -113,12 +119,14 @@ function renderVistaPublica(r, agros){
   if(agros.length===0){
     html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
   }else{
-    html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Fecha Aplic.</th><th>Carencia</th><th>Cumple</th></tr></thead><tbody>';
+    html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Ingr. activo</th><th>Dosis</th><th>Fecha Aplic.</th><th>Carencia</th><th>Cumple</th></tr></thead><tbody>';
     agros.forEach(a=>{
       const cum=cumpleCarencia(a.cosecha, r.fecha);
       html+='<tr>';
       html+='<td><strong>'+a.agroquimico+'</strong></td>';
       html+='<td>'+(a.sag||'-')+'</td>';
+      html+='<td>'+(a.pa||'-')+'</td>';
+      html+='<td>'+(a.dosis||'-')+'</td>';
       html+='<td>'+fmtFecha(a.fecha)+'</td>';
       html+='<td>'+(a.carencia||'-')+'d</td>';
       html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
@@ -126,6 +134,7 @@ function renderVistaPublica(r, agros){
     });
     html+='</tbody></table></div>';
   }
+  html+='<button class="btn-pdf" onclick="window.descargarPDFTrazabilidad()">⬇ Descargar PDF</button>';
   html+='</div>';
   return html;
 }
@@ -144,12 +153,14 @@ function renderVistaConsolidadaPublica(cc, detalle){
     if(!d.agros.length){
       html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
     }else{
-      html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Fecha Aplic.</th><th>Carencia</th><th>Cumple</th></tr></thead><tbody>';
+      html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Ingr. activo</th><th>Dosis</th><th>Fecha Aplic.</th><th>Carencia</th><th>Cumple</th></tr></thead><tbody>';
       d.agros.forEach(a=>{
         const cum=cumpleCarencia(a.cosecha, cc.fechaDespacho);
         html+='<tr>';
         html+='<td><strong>'+a.agroquimico+'</strong></td>';
         html+='<td>'+(a.sag||'-')+'</td>';
+        html+='<td>'+(a.pa||'-')+'</td>';
+        html+='<td>'+(a.dosis||'-')+'</td>';
         html+='<td>'+fmtFecha(a.fecha)+'</td>';
         html+='<td>'+(a.carencia||'-')+'d</td>';
         html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
@@ -159,6 +170,7 @@ function renderVistaConsolidadaPublica(cc, detalle){
     }
     html+='</div>';
   });
+  html+='<div class="card"><button class="btn-pdf" onclick="window.descargarPDFTrazabilidad()">⬇ Descargar PDF</button></div>';
   return html;
 }
 
@@ -178,6 +190,7 @@ async function cargarTrazabilidadPartida(app,db,cont){
   const nCorr=String(r.correlativo || 0).padStart(4,'0');
   document.getElementById('hdr-title').textContent='TRZ-'+nCorr+' — '+r.especie;
 
+  _dataR=r; _dataAgros=agros;
   cont.innerHTML=renderVistaPublica(r, agros);
 }
 
@@ -200,8 +213,89 @@ async function cargarTrazabilidadConsolidada(app,db,cont){
     detalle.push({proveedor:p.proveedor,kilosAportados:p.kilosAportados,agros});
   }
 
+  _dataCC=cc; _dataDetalle=detalle;
   cont.innerHTML=renderVistaConsolidadaPublica(cc, detalle);
 }
+
+function generarPDFIndividual(r, agros){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  const verde=[26,74,46];
+  const nCorr=String(r.correlativo||0).padStart(4,'0');
+
+  pdf.setFontSize(16);
+  pdf.setTextColor(verde[0],verde[1],verde[2]);
+  pdf.text('Ficha de Trazabilidad — MAFLES', 14, 18);
+
+  pdf.setFontSize(10);
+  pdf.setTextColor(90,90,90);
+  pdf.text('TRZ-'+nCorr+'  ·  '+(r.especie||'-'), 14, 26);
+  let infoY=32;
+  if(r.bandejas) { pdf.text('Cantidad bandejas: '+r.bandejas, 14, infoY); infoY+=6; }
+  if(r.kg) { pdf.text('Kilos recepcionados: '+Number(r.kg).toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+' kg', 14, infoY); infoY+=6; }
+
+  const rows=(agros||[]).map(a=>[fmtFecha(a.fecha), a.agroquimico||'-', a.pa||'-', a.dosis||'-', (a.carencia||'-')+' d']);
+
+  pdf.autoTable({
+    startY: infoY+4,
+    head: [['Fecha','Producto','Ingrediente activo','Dosis','Carencia']],
+    body: rows.length?rows:[['-','Sin registros de agroquímicos','-','-','-']],
+    headStyles:{fillColor:verde,textColor:255,fontSize:9},
+    styles:{fontSize:9,cellPadding:3},
+    margin:{left:14,right:14}
+  });
+
+  pdf.save('TRZ-'+nCorr+'.pdf');
+}
+
+function generarPDFConsolidado(cc, detalle){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  const verde=[26,74,46];
+
+  pdf.setFontSize(16);
+  pdf.setTextColor(verde[0],verde[1],verde[2]);
+  pdf.text('Carga Consolidada — MAFLES', 14, 18);
+
+  pdf.setFontSize(10);
+  pdf.setTextColor(90,90,90);
+  pdf.text('Cliente: '+(cc.cliente||'-'), 14, 26);
+  pdf.text('Especie: '+(cc.especie||'-'), 14, 32);
+  pdf.text('Fecha despacho: '+fmtFecha(cc.fechaDespacho), 14, 38);
+  pdf.text('Kilos totales: '+fmtNum(cc.kilosTotales)+' kg', 14, 44);
+
+  let y=52;
+  (detalle||[]).forEach(d=>{
+    if(y>250){ pdf.addPage(); y=20; }
+    pdf.setFontSize(11);
+    pdf.setTextColor(verde[0],verde[1],verde[2]);
+    pdf.text('Partida — '+d.proveedor+' ('+fmtNum(d.kilosAportados)+' kg)', 14, y);
+    y+=4;
+    const rows=(d.agros||[]).map(a=>[fmtFecha(a.fecha), a.agroquimico||'-', a.pa||'-', a.dosis||'-', (a.carencia||'-')+' d']);
+    pdf.autoTable({
+      startY:y,
+      head:[['Fecha','Producto','Ingrediente activo','Dosis','Carencia']],
+      body: rows.length?rows:[['-','Sin registros de agroquímicos','-','-','-']],
+      headStyles:{fillColor:verde,textColor:255,fontSize:8},
+      styles:{fontSize:8,cellPadding:2.5},
+      margin:{left:14,right:14}
+    });
+    y=pdf.lastAutoTable.finalY+10;
+  });
+
+  const fechaArchivo=(cc.fechaDespacho||new Date().toISOString().slice(0,10));
+  pdf.save('Consolidado-'+(cc.especie||'Carga')+'-'+fechaArchivo+'.pdf');
+}
+
+window.descargarPDFTrazabilidad = function(){
+  if(consolidadoId && _dataCC){
+    generarPDFConsolidado(_dataCC, _dataDetalle);
+  } else if(_dataR){
+    generarPDFIndividual(_dataR, _dataAgros);
+  } else {
+    alert('Los datos aún se están cargando, intenta de nuevo en un segundo.');
+  }
+};
 
 async function cargarTrazabilidad(){
   const cont=document.getElementById('main-content');
