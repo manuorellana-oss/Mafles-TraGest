@@ -230,6 +230,7 @@ tr:hover td{background:#f8fcf8}
     <div class="nav-tab active" onclick="showMod(&#39;resumen&#39;,this);initResumen();" data-mod="resumen"><i class="ti ti-layout-dashboard"></i> Resumen</div>
     <div class="nav-tab" onclick="showMod(&#39;productores&#39;,this);renderListaProd();" data-mod="productores"><i class="ti ti-users"></i> Productores</div>
     <div class="nav-tab" onclick="showMod(&#39;recepcion&#39;,this)" data-mod="recepcion"><i class="ti ti-clipboard-check"></i> Recepción/Compra</div>
+    <div class="nav-tab" onclick="showMod(&#39;ventas&#39;,this);initVentas();" data-mod="ventas"><i class="ti ti-truck-delivery"></i> Ventas</div>
     <div class="nav-tab" onclick="showMod(&#39;campo&#39;,this)" data-mod="campo"><i class="ti ti-plant-2"></i> Campo</div>
     <div class="nav-tab" onclick="showMod(&#39;envases&#39;,this)" data-mod="envases"><i class="ti ti-box"></i> Envases</div>
     <div class="nav-tab" onclick="showMod(&#39;kpi&#39;,this)" data-mod="kpi"><i class="ti ti-chart-bar"></i> KPI</div>
@@ -1246,9 +1247,9 @@ tr:hover td{background:#f8fcf8}
           <input id="cc-cliente" placeholder="Cliente (ej: Watts)" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:160px">
           <select id="cc-razon" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px">
             <option value="">Razón social emisora</option>
-            <option>MAFLES</option>
-            <option>Comercializadora MAFLES</option>
-            <option>Comercializadora Las Flores</option>
+            <option>Comercializadora Mafles</option>
+            <option>Mafles Chile</option>
+            <option>Fruticola Las Flores</option>
           </select>
           <input id="cc-guia" placeholder="N° referencia/guía (opcional)" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:160px">
         </div>
@@ -1291,6 +1292,135 @@ tr:hover td{background:#f8fcf8}
         </table></div>
       </div>
 
+    </div>
+
+    <!-- VENTAS -->
+    <div class="module" id="mod-ventas">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-truck-delivery"></i> Datos Generales de la Venta</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Cliente Destino</label><input type="text" id="v-cliente" placeholder="Nombre del cliente..."></div>
+          <div class="form-group"><label>Lugar de Venta</label><input type="text" id="v-lugar" placeholder="Ej: Longaví"></div>
+          <div class="form-group">
+            <label>Razón Social</label>
+            <select id="v-razon">
+              <option value="">Seleccionar...</option>
+              <option>Comercializadora Mafles</option>
+              <option>Mafles Chile</option>
+              <option>Fruticola Las Flores</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Fecha Venta</label><input type="date" id="v-fecha"></div>
+          <div class="form-group"><label>Hora Venta</label><input type="time" id="v-hora"></div>
+          <div class="form-group"><label>Guía Despacho</label><input type="text" id="v-guia" placeholder="Opcional"></div>
+          <div class="form-group"><label>N° Venta</label><input type="text" id="v-numero" readonly style="background:#f5f5f5;font-weight:700" value="Se genera al guardar"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-apple"></i> Materia Prima</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Especie</label>
+            <select id="v-esp">
+              <option value="">Seleccionar...</option>
+              <option>Espárrago</option><option>Arándano</option><option>Mora</option>
+              <option>Frambuesa</option><option>Frutilla</option><option>Uva</option>
+              <option>Kiwi</option><option>Cereza</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estado Agrícola</label>
+            <select id="v-estado-agricola">
+              <option value="">Seleccionar...</option>
+              <option>Convencional</option><option>Orgánico</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Variedad</label><input type="text" id="v-variedad" placeholder="Ej: Heritage, Navajo, Crimson..."></div>
+          <div class="form-group">
+            <label>Conservación</label>
+            <select id="v-conservacion">
+              <option value="">Seleccionar...</option>
+              <option>Fresco</option><option>IQF</option><option>Block</option><option>Congelado</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Calidad</label>
+            <select id="v-calidad">
+              <option value="">Seleccionar...</option>
+              <option>Primera</option><option>Segunda</option><option>Rechazo</option><option>Otro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-scale"></i> Montos</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo de Bandeja</label>
+            <select id="v-bandeja-tipo" onchange="calcularKgNetoVenta()">
+              <option value="">Seleccionar...</option>
+              <option>Bandeja 3/4 (Espárrago/Kiwi/Uva/Cereza)</option>
+              <option>Bandeja arándanos</option>
+              <option>Rejilla verde (Mora/Frambuesa)</option>
+              <option>Bandeja frutillera</option>
+              <option>Bins</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Cantidad de Bandejas</label><input type="number" id="v-cant-bandejas" placeholder="0" min="0" oninput="calcularKgNetoVenta()"></div>
+          <div class="form-group"><label>Peso Bandeja Unitario (kg)</label><input type="number" id="v-peso-bandeja" placeholder="0.0" step="0.01" min="0" oninput="calcularKgNetoVenta()"></div>
+          <div class="form-group"><label>N° Pallets</label><input type="number" id="v-cant-pallets" placeholder="0" min="0" oninput="calcularKgNetoVenta()"></div>
+          <div class="form-group"><label>Peso Pallet Unitario (kg)</label><input type="number" id="v-peso-pallet" placeholder="0.0" step="0.01" min="0" oninput="calcularKgNetoVenta()"></div>
+          <div class="form-group"><label>Kg Bruto (Romana)</label><input type="number" id="v-kg-bruto" placeholder="0.0" step="0.1" min="0" oninput="calcularKgNetoVenta()"></div>
+          <div class="form-group"><label>Kg Netos</label><input type="text" id="v-kg-neto" readonly style="background:#f5f5f5;font-weight:700"></div>
+        </div>
+        <p style="font-size:11px;color:#888;margin-top:4px">El Kg Bruto se ingresa manualmente según lo indicado por la romana. El sistema no puede leer el peso automáticamente desde un instrumento físico. Kg Netos = Kg Bruto − (Peso Bandeja × Cantidad) − (Peso Pallet × N° Pallets).</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-currency-dollar"></i> Valor Venta</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Moneda Venta</label>
+            <select id="v-moneda" onchange="calcularSubtotalItemVenta()">
+              <option value="">Seleccionar...</option>
+              <option>Pesos</option><option>Dólares</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Valor KG Venta</label><input type="number" id="v-precio-kg" placeholder="0.0" step="0.01" min="0" oninput="calcularSubtotalItemVenta()"></div>
+          <div class="form-group"><label>Subtotal Neto (este ítem)</label><input type="text" id="v-subtotal-item" readonly style="background:#f5f5f5;font-weight:700"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="agregarItemVenta()"><i class="ti ti-plus"></i> Agregar Ítem a la Venta</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-list"></i> Ítems de la Venta</div>
+        <div class="tbl-wrap"><table id="tbl-venta-items">
+          <thead><tr><th>Item</th><th>Cliente</th><th>Materia Prima</th><th>Bandeja</th><th>Peso Ban Uni</th><th>C. Ban</th><th>Peso Pallet</th><th>Kg Bruto</th><th>Kg Neto</th><th>P. KG Venta</th><th>SubTotal Neto</th><th></th></tr></thead>
+          <tbody id="tbody-venta-items"><tr><td colspan="12" style="text-align:center;color:#aaa;padding:1rem">Sin ítems agregados aún</td></tr></tbody>
+        </table></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="ti ti-report-money"></i> Resumen</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Cantidad Tarjas</label><input type="text" id="v-res-tarjas" readonly style="background:#f5f5f5"></div>
+          <div class="form-group"><label>Cantidad Bandejas</label><input type="text" id="v-res-bandejas" readonly style="background:#f5f5f5"></div>
+          <div class="form-group"><label>Total Kilos Bandejas</label><input type="text" id="v-res-kg-bandejas" readonly style="background:#f5f5f5"></div>
+          <div class="form-group"><label>Total Kilos Brutos</label><input type="text" id="v-res-kg-brutos" readonly style="background:#f5f5f5"></div>
+          <div class="form-group"><label>Total Kilos Netos</label><input type="text" id="v-res-kg-netos" readonly style="background:#f5f5f5"></div>
+          <div class="form-group"><label>Neto</label><input type="text" id="v-res-neto" readonly style="background:#f5f5f5;font-weight:700"></div>
+          <div class="form-group"><label>IVA (19%)</label><input type="text" id="v-res-iva" readonly style="background:#f5f5f5"></div>
+          <div class="form-group"><label>Total</label><input type="text" id="v-res-total" readonly style="background:#f5f5f5;font-weight:700"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-guardar-venta" onclick="guardarVenta()"><i class="ti ti-device-floppy"></i> Guardar Venta</button>
+        </div>
+      </div>
     </div>
 
     <!-- LIQUIDACIONES -->
@@ -3907,7 +4037,7 @@ const ENVASES_X_ESP = {
 };
 
 // ===== DATA LOCAL =====
-let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[],consolidadas:[],auditoria:[],liquidaciones:[]};
+let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[],consolidadas:[],auditoria:[],liquidaciones:[],ventas:[]};
 window._dataReady = false;
 
 // ===== HELPERS =====
@@ -3992,6 +4122,18 @@ async function generarFolioLiquidacion(){
   const correlativo = String(nuevoNumero).padStart(4,'0');
   return dd+'-'+mm+'-'+aaaa+'-'+correlativo;
 }
+// Folio de Venta: correlativo único global, formato numérico de 7 dígitos (igual al "N° Venta" del sistema de referencia)
+async function generarFolioVenta(){
+  const ref = window._doc(window._db,'contadores','ventas');
+  const nuevoNumero = await window._runTransaction(window._db, async (tx)=>{
+    const snap = await tx.get(ref);
+    const actual = snap.exists() ? (snap.data().ultimo||0) : 0;
+    const siguiente = actual + 1;
+    tx.set(ref, {ultimo: siguiente});
+    return siguiente;
+  });
+  return String(nuevoNumero).padStart(7,'0');
+}
 async function fbLoad(col){
   try{
     if(!window._fbReady)return[];
@@ -4034,6 +4176,7 @@ window._cargarDatosSistema = async function(){
   DATA.consolidadas=await fbLoad('consolidadas');
   DATA.auditoria=await fbLoad('auditoria');
   DATA.liquidaciones=await fbLoad('liquidaciones');
+  DATA.ventas=await fbLoad('ventas');
   renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();renderConsolidadoHist();
   // Poblar datos de Resumen sin forzar el cambio de pestaña (evita sacar al usuario de donde esté navegando)
   initResumen();
@@ -4605,6 +4748,164 @@ function renderEvalGrid(esp){
       <option value="">Seleccionar...</option>
       ${EVAL_OPTS.map(o=>`<option>${o}</option>`).join('')}
     </select></div>`).join('');
+}
+
+// ===== VENTAS =====
+window.initVentas=function(){
+  var elFecha=document.getElementById('v-fecha');
+  if(elFecha && !elFecha.value) elFecha.value=today();
+  var elHora=document.getElementById('v-hora');
+  if(elHora && !elHora.value){
+    var ahora=new Date();
+    var hh=String(ahora.getHours()).padStart(2,'0');
+    var mm=String(ahora.getMinutes()).padStart(2,'0');
+    elHora.value=hh+':'+mm;
+  }
+}
+window.calcularKgNetoVenta=function(){
+  const kgBruto=parseFloat(document.getElementById('v-kg-bruto').value)||0;
+  const cantBandejas=parseFloat(document.getElementById('v-cant-bandejas').value)||0;
+  const pesoBandeja=parseFloat(document.getElementById('v-peso-bandeja').value)||0;
+  const cantPallets=parseFloat(document.getElementById('v-cant-pallets').value)||0;
+  const pesoPallet=parseFloat(document.getElementById('v-peso-pallet').value)||0;
+  const destareTotal=(cantBandejas*pesoBandeja)+(cantPallets*pesoPallet);
+  const kgNeto=Math.max(kgBruto-destareTotal,0);
+  document.getElementById('v-kg-neto').value=fmtNum(kgNeto)+' kg';
+  calcularSubtotalItemVenta();
+}
+window.calcularSubtotalItemVenta=function(){
+  const kgBruto=parseFloat(document.getElementById('v-kg-bruto').value)||0;
+  const cantBandejas=parseFloat(document.getElementById('v-cant-bandejas').value)||0;
+  const pesoBandeja=parseFloat(document.getElementById('v-peso-bandeja').value)||0;
+  const cantPallets=parseFloat(document.getElementById('v-cant-pallets').value)||0;
+  const pesoPallet=parseFloat(document.getElementById('v-peso-pallet').value)||0;
+  const kgNeto=Math.max(kgBruto-((cantBandejas*pesoBandeja)+(cantPallets*pesoPallet)),0);
+  const precioKg=parseFloat(document.getElementById('v-precio-kg').value)||0;
+  const subtotal=kgNeto*precioKg;
+  document.getElementById('v-subtotal-item').value='$'+fmtNum(subtotal);
+}
+window._ventaItems = [];
+window.agregarItemVenta=function(){
+  const cliente=document.getElementById('v-cliente').value.trim();
+  const esp=document.getElementById('v-esp').value;
+  if(!cliente){alert('Ingresa el Cliente Destino antes de agregar un ítem');return}
+  if(!esp){alert('Selecciona la Especie antes de agregar un ítem');return}
+  const kgBruto=parseFloat(document.getElementById('v-kg-bruto').value)||0;
+  if(!kgBruto){alert('Ingresa el Kg Bruto (Romana)');return}
+  const cantBandejas=parseFloat(document.getElementById('v-cant-bandejas').value)||0;
+  const pesoBandeja=parseFloat(document.getElementById('v-peso-bandeja').value)||0;
+  const cantPallets=parseFloat(document.getElementById('v-cant-pallets').value)||0;
+  const pesoPallet=parseFloat(document.getElementById('v-peso-pallet').value)||0;
+  const kgNeto=Math.max(kgBruto-((cantBandejas*pesoBandeja)+(cantPallets*pesoPallet)),0);
+  const precioKg=parseFloat(document.getElementById('v-precio-kg').value)||0;
+  const subtotal=kgNeto*precioKg;
+  const materiaPrima=[esp,document.getElementById('v-estado-agricola').value,document.getElementById('v-variedad').value.trim(),document.getElementById('v-conservacion').value,document.getElementById('v-calidad').value].filter(Boolean).join(' · ');
+
+  window._ventaItems.push({
+    cliente:cliente, materiaPrima:materiaPrima,
+    bandejaTipo:document.getElementById('v-bandeja-tipo').value||'-',
+    pesoBandeja:pesoBandeja, cantBandejas:cantBandejas,
+    pesoPallet:pesoPallet, cantPallets:cantPallets,
+    kgBruto:kgBruto, kgNeto:kgNeto,
+    moneda:document.getElementById('v-moneda').value||'',
+    precioKg:precioKg, subtotal:subtotal
+  });
+  renderTablaVentaItems();
+
+  // Limpia solo Materia Prima/Montos/Valor Venta para poder ingresar el siguiente ítem
+  ['v-variedad','v-cant-bandejas','v-peso-bandeja','v-cant-pallets','v-peso-pallet','v-kg-bruto','v-precio-kg'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['v-esp','v-estado-agricola','v-conservacion','v-calidad','v-bandeja-tipo','v-moneda'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('v-kg-neto').value='';
+  document.getElementById('v-subtotal-item').value='';
+  showStatus('Ítem agregado a la venta ✓');
+}
+function renderTablaVentaItems(){
+  var items = window._ventaItems;
+  document.getElementById('tbody-venta-items').innerHTML = items.map(function(it,idx){
+    return '<tr><td>'+(idx+1)+'</td><td>'+it.cliente+'</td><td style="font-size:11px">'+it.materiaPrima+'</td>'+
+      '<td>'+it.bandejaTipo+'</td><td>'+fmtNum(it.pesoBandeja)+' kg</td><td>'+it.cantBandejas+'</td>'+
+      '<td>'+fmtNum(it.pesoPallet)+' kg</td><td>'+fmtNum(it.kgBruto)+' kg</td><td>'+fmtNum(it.kgNeto)+' kg</td>'+
+      '<td>'+(it.moneda==='Dólares'?'US$':'$')+fmtNum(it.precioKg)+'</td><td style="font-weight:600">'+(it.moneda==='Dólares'?'US$':'$')+fmtNum(it.subtotal)+'</td>'+
+      '<td><button class="btn btn-danger" style="height:30px;font-size:14px;padding:0 8px;min-width:32px" onclick="eliminarItemVenta('+idx+')">🗑️</button></td></tr>';
+  }).join('') || '<tr><td colspan="12" style="text-align:center;color:#aaa;padding:1rem">Sin ítems agregados aún</td></tr>';
+  actualizarResumenVenta();
+}
+window.eliminarItemVenta=function(idx){
+  window._ventaItems.splice(idx,1);
+  renderTablaVentaItems();
+}
+window.actualizarResumenVenta=function(){
+  var items = window._ventaItems;
+  var cantTarjas = items.length;
+  var cantBandejas = items.reduce(function(s,it){return s+(it.cantBandejas||0);},0);
+  var kgBandejas = items.reduce(function(s,it){return s+((it.cantBandejas||0)*(it.pesoBandeja||0));},0);
+  var kgBrutos = items.reduce(function(s,it){return s+(it.kgBruto||0);},0);
+  var kgNetos = items.reduce(function(s,it){return s+(it.kgNeto||0);},0);
+  var neto = items.reduce(function(s,it){return s+(it.subtotal||0);},0);
+  var iva = neto*0.19;
+  var total = neto+iva;
+  document.getElementById('v-res-tarjas').value = cantTarjas;
+  document.getElementById('v-res-bandejas').value = fmtNum(cantBandejas);
+  document.getElementById('v-res-kg-bandejas').value = fmtNum(kgBandejas)+' kg';
+  document.getElementById('v-res-kg-brutos').value = fmtNum(kgBrutos)+' kg';
+  document.getElementById('v-res-kg-netos').value = fmtNum(kgNetos)+' kg';
+  document.getElementById('v-res-neto').value = '$'+fmtNum(neto);
+  document.getElementById('v-res-iva').value = '$'+fmtNum(iva);
+  document.getElementById('v-res-total').value = '$'+fmtNum(total);
+}
+window.guardarVenta=async function(){
+  const cliente=document.getElementById('v-cliente').value.trim();
+  const razon=document.getElementById('v-razon').value;
+  if(!cliente){alert('Ingresa el Cliente Destino');return}
+  if(!razon){alert('Selecciona la Razón Social emisora');return}
+  if(window._ventaItems.length===0){alert('Agrega al menos un ítem a la venta antes de guardar');return}
+
+  var btn=document.getElementById('btn-guardar-venta');
+  btn.disabled=true; btn.textContent='Guardando...';
+
+  try{
+    var folio = await generarFolioVenta();
+    var items = window._ventaItems;
+    var cantTarjas = items.length;
+    var cantBandejas = items.reduce(function(s,it){return s+(it.cantBandejas||0);},0);
+    var kgBandejas = items.reduce(function(s,it){return s+((it.cantBandejas||0)*(it.pesoBandeja||0));},0);
+    var kgBrutos = items.reduce(function(s,it){return s+(it.kgBruto||0);},0);
+    var kgNetos = items.reduce(function(s,it){return s+(it.kgNeto||0);},0);
+    var neto = items.reduce(function(s,it){return s+(it.subtotal||0);},0);
+    var iva = neto*0.19;
+    var total = neto+iva;
+
+    var venta = {
+      id: folio, numeroVenta: folio,
+      cliente: cliente, lugarVenta: document.getElementById('v-lugar').value.trim(),
+      razonSocial: razon,
+      fecha: document.getElementById('v-fecha').value||today(),
+      hora: document.getElementById('v-hora').value||'',
+      guiaDespacho: document.getElementById('v-guia').value.trim(),
+      items: items,
+      resumen: {cantTarjas:cantTarjas, cantBandejas:cantBandejas, kgBandejas:kgBandejas, kgBrutos:kgBrutos, kgNetos:kgNetos, neto:neto, iva:iva, total:total},
+      creadoPor: window._usuarioActual || '', _tsCreacion: Date.now()
+    };
+
+    await fbSave('ventas', venta);
+    DATA.ventas.push(venta);
+
+    showStatus('Venta N° '+folio+' guardada ✓');
+    alert('Venta guardada con N° '+folio);
+
+    // Reset completo del formulario para una nueva venta
+    window._ventaItems=[];
+    renderTablaVentaItems();
+    ['v-cliente','v-lugar','v-guia'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('v-razon').value='';
+    document.getElementById('v-numero').value='Se genera al guardar';
+    initVentas();
+  }catch(e){
+    console.error(e);
+    alert('Ocurrió un error guardando la venta. Revisa la consola o inténtalo de nuevo.');
+  }finally{
+    btn.disabled=false; btn.innerHTML='<i class="ti ti-device-floppy"></i> Guardar Venta';
+  }
 }
 
 // ===== RECEPCION SAVE =====
