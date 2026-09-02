@@ -229,7 +229,7 @@ tr:hover td{background:#f8fcf8}
   <div class="nav-tabs" id="nav-tabs">
     <div class="nav-tab active" onclick="showMod(&#39;resumen&#39;,this);initResumen();" data-mod="resumen"><i class="ti ti-layout-dashboard"></i> Resumen</div>
     <div class="nav-tab" onclick="showMod(&#39;productores&#39;,this);renderListaProd();" data-mod="productores"><i class="ti ti-users"></i> Productores</div>
-    <div class="nav-tab" onclick="showMod(&#39;recepcion&#39;,this)" data-mod="recepcion"><i class="ti ti-clipboard-check"></i> Recepción</div>
+    <div class="nav-tab" onclick="showMod(&#39;recepcion&#39;,this)" data-mod="recepcion"><i class="ti ti-clipboard-check"></i> Recepción/Compra</div>
     <div class="nav-tab" onclick="showMod(&#39;campo&#39;,this)" data-mod="campo"><i class="ti ti-plant-2"></i> Campo</div>
     <div class="nav-tab" onclick="showMod(&#39;envases&#39;,this)" data-mod="envases"><i class="ti ti-box"></i> Envases</div>
     <div class="nav-tab" onclick="showMod(&#39;kpi&#39;,this)" data-mod="kpi"><i class="ti ti-chart-bar"></i> KPI</div>
@@ -556,7 +556,7 @@ tr:hover td{background:#f8fcf8}
     <!-- RECEPCION -->
     <div class="module" id="mod-recepcion">
       <div class="card">
-        <div class="card-title"><i class="ti ti-clipboard-plus"></i> Nueva Recepción de Materia Prima</div>
+        <div class="card-title"><i class="ti ti-clipboard-plus"></i> Nueva Recepción/Compra de Materia Prima</div>
         <div class="form-grid">
           <div class="form-group" style="position:relative">
             <label>Proveedor</label>
@@ -575,7 +575,7 @@ tr:hover td{background:#f8fcf8}
           </div>
           <div class="form-group"><label>Fecha Recepción</label><input type="date" id="r-fecha"></div>
           <div class="form-group"><label>N° Guía Despacho</label><input type="text" id="r-guia" placeholder="GD-0001"></div>
-          <div class="form-group"><label>Kg Brutos Recibidos</label><input type="number" id="r-kg" placeholder="0.0" step="0.1"></div>
+          <div class="form-group"><label>Kg Brutos Recibidos</label><input type="number" id="r-kg" placeholder="0.0" step="0.1" oninput="calcularDestareRecepcion()"></div>
           <div class="form-group"><label>Kg Netos Recibidos</label><input type="number" id="r-kg-neto" placeholder="0.0" step="0.1"></div>
           <div class="form-group">
             <label>Estado Agrícola</label>
@@ -592,7 +592,7 @@ tr:hover td{background:#f8fcf8}
               <option>Fresco</option><option>IQF</option><option>Block</option><option>Congelado</option><option>Otro</option>
             </select>
           </div>
-          <div class="form-group"><label>N° Bandejas</label><input type="number" id="r-bandejas" placeholder="0" min="0"></div>
+          <div class="form-group"><label>N° Bandejas</label><input type="number" id="r-bandejas" placeholder="0" min="0" oninput="calcularDestareRecepcion()"></div>
           <div class="form-group"><label>Zona de Recolección</label><input type="text" id="r-campo" placeholder="Ej: Cuartel Norte - Sector 3"></div>
           <div class="form-group" id="grupo-sag-prod" style="display:none">
             <label id="lbl-sag-prod"><i class="ti ti-shield-check"></i> Código SAG Productor <span style="font-size:11px;font-weight:400;color:#c0392b">(obligatorio para Arándano)</span></label>
@@ -609,6 +609,17 @@ tr:hover td{background:#f8fcf8}
             </div>
           </div>
           <div class="eval-grid" id="eval-grid"></div>
+        </div>
+
+        <div style="margin-top:1rem">
+          <div class="card-title" style="margin-bottom:.5rem"><i class="ti ti-scale"></i> Destare (Bandejas y Pallets)</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Peso Destare por Bandeja (kg)</label><input type="number" id="r-destare-bandeja" placeholder="0.0" step="0.01" min="0" oninput="calcularDestareRecepcion()"></div>
+            <div class="form-group"><label>N° Pallets</label><input type="number" id="r-pallets" placeholder="0" min="0" oninput="calcularDestareRecepcion()"></div>
+            <div class="form-group"><label>Peso Destare por Pallet (kg)</label><input type="number" id="r-destare-pallet" placeholder="0.0" step="0.01" min="0" oninput="calcularDestareRecepcion()"></div>
+            <div class="form-group"><label>Destare Total (kg)</label><input type="text" id="r-destare-total" readonly style="background:#f5f5f5;font-weight:700"></div>
+          </div>
+          <p style="font-size:11px;color:#888;margin-top:4px">El peso de destare por bandeja y por pallet se ingresa libremente, ya que varía según el tipo de envase utilizado. El Destare Total se resta del Kg Bruto para sugerir el Kg Neto (puedes ajustarlo manualmente si es necesario).</p>
         </div>
 
         <div class="form-grid" style="margin-top:1rem">
@@ -1307,9 +1318,25 @@ tr:hover td{background:#f8fcf8}
       <div class="card" id="liq-resultados-card" style="display:none">
         <div class="card-title"><i class="ti ti-list"></i> Recepciones Pendientes de Liquidación</div>
         <div class="tbl-wrap"><table id="tbl-liq-pendientes">
-          <thead><tr><th>Fecha</th><th>Especie</th><th>Calidad</th><th>Guía</th><th>Kg Brutos</th><th>Kg Netos</th></tr></thead>
+          <thead><tr><th></th><th>Fecha</th><th>Especie</th><th>Calidad</th><th>Guía</th><th>Kg Brutos</th><th>Kg Netos</th><th>Precio Unitario ($/kg)</th><th>Total Pesos</th></tr></thead>
           <tbody id="tbody-liq-pendientes"></tbody>
         </table></div>
+
+        <div style="margin:1rem 0;padding:10px 14px;background:#eef7ee;border-radius:8px;display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="liq-retiene-iva" onchange="recalcularLiquidacion()" style="width:18px;height:18px">
+          <label for="liq-retiene-iva" style="font-size:13px;font-weight:600;color:#1a4a2e;cursor:pointer">Retiene IVA</label>
+        </div>
+
+        <div class="form-grid" style="margin-top:.5rem">
+          <div class="form-group"><label>Kilos a Pagar</label><input type="text" id="liq-tot-kilos" readonly style="background:#f5f5f5;font-weight:700"></div>
+          <div class="form-group"><label>Neto</label><input type="text" id="liq-tot-neto" readonly style="background:#f5f5f5;font-weight:700"></div>
+          <div class="form-group"><label>IVA Retenido</label><input type="text" id="liq-tot-iva" readonly style="background:#f5f5f5"></div>
+          <div class="form-group"><label>Total Liquidación</label><input type="text" id="liq-tot-total" readonly style="background:#f5f5f5;font-weight:700"></div>
+          <div class="form-group"><label>Menos IVA Retenido</label><input type="text" id="liq-tot-menos-iva" readonly style="background:#f5f5f5"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btn-generar-liq" onclick="generarLiquidacion()"><i class="ti ti-file-invoice"></i> Generar Liquidación</button>
+        </div>
       </div>
     </div>
 
@@ -3665,7 +3692,7 @@ var qrcode = function() {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, setDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, setDoc, getDocs, query, orderBy, deleteDoc, doc, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const cfg = {
@@ -3695,6 +3722,8 @@ window._orderBy = orderBy;
 window._deleteDoc = deleteDoc;
 window._doc = doc;
 window._doc = doc;
+window._runTransaction = runTransaction;
+window._getDoc = getDoc;
 window._fbReady = true;
 
 // Si ya hay una sesión de Firebase activa (recarga de página), reingresar automáticamente
@@ -3878,7 +3907,7 @@ const ENVASES_X_ESP = {
 };
 
 // ===== DATA LOCAL =====
-let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[],consolidadas:[],auditoria:[]};
+let DATA = {recepciones:[],campo:[],devoluciones:[],kpi:[],precios:[],consolidadas:[],auditoria:[],liquidaciones:[]};
 window._dataReady = false;
 
 // ===== HELPERS =====
@@ -3943,6 +3972,26 @@ async function fbSave(col,data){
     showStatus('Guardado en Firebase ✓');
   }catch(e){console.error(e);showStatus('Guardado local (sin conexión)')}
 }
+// ===== FOLIO CORRELATIVO ÚNICO (LIQUIDACIONES) =====
+// Contador atómico en Firestore: el documento 'contadores/liquidaciones' guarda el último
+// número usado. runTransaction garantiza que dos usuarios liquidando al mismo tiempo
+// nunca reciban el mismo folio, aunque hagan clic en el mismo segundo.
+async function generarFolioLiquidacion(){
+  const ref = window._doc(window._db,'contadores','liquidaciones');
+  const nuevoNumero = await window._runTransaction(window._db, async (tx)=>{
+    const snap = await tx.get(ref);
+    const actual = snap.exists() ? (snap.data().ultimo||0) : 0;
+    const siguiente = actual + 1;
+    tx.set(ref, {ultimo: siguiente});
+    return siguiente;
+  });
+  const hoy = new Date();
+  const dd = String(hoy.getDate()).padStart(2,'0');
+  const mm = String(hoy.getMonth()+1).padStart(2,'0');
+  const aaaa = hoy.getFullYear();
+  const correlativo = String(nuevoNumero).padStart(4,'0');
+  return dd+'-'+mm+'-'+aaaa+'-'+correlativo;
+}
 async function fbLoad(col){
   try{
     if(!window._fbReady)return[];
@@ -3984,6 +4033,7 @@ window._cargarDatosSistema = async function(){
   DATA.precios=await fbLoad('precios');
   DATA.consolidadas=await fbLoad('consolidadas');
   DATA.auditoria=await fbLoad('auditoria');
+  DATA.liquidaciones=await fbLoad('liquidaciones');
   renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();renderConsolidadoHist();
   // Poblar datos de Resumen sin forzar el cambio de pestaña (evita sacar al usuario de donde esté navegando)
   initResumen();
@@ -4558,6 +4608,19 @@ function renderEvalGrid(esp){
 }
 
 // ===== RECEPCION SAVE =====
+window.calcularDestareRecepcion=function(){
+  const bandejas=parseFloat(document.getElementById('r-bandejas').value)||0;
+  const destareBandeja=parseFloat(document.getElementById('r-destare-bandeja').value)||0;
+  const pallets=parseFloat(document.getElementById('r-pallets').value)||0;
+  const destarePallet=parseFloat(document.getElementById('r-destare-pallet').value)||0;
+  const destareTotal=(bandejas*destareBandeja)+(pallets*destarePallet);
+  document.getElementById('r-destare-total').value=fmtNum(destareTotal)+' kg';
+  const kgBruto=parseFloat(document.getElementById('r-kg').value)||0;
+  if(kgBruto>0){
+    const kgNetoSugerido=Math.max(kgBruto-destareTotal,0);
+    document.getElementById('r-kg-neto').value=kgNetoSugerido.toFixed(1);
+  }
+}
 window.saveRecepcion=function(){
   const esp=document.getElementById('r-esp').value;
   const prov=document.getElementById('r-prov').value.trim();
@@ -4587,6 +4650,10 @@ window.saveRecepcion=function(){
     estadoAgricola:document.getElementById('r-estado-agricola').value,
     variedad:document.getElementById('r-variedad').value.trim(),
     conservacion:document.getElementById('r-conservacion').value,
+    destareBandejaUnit:parseFloat(document.getElementById('r-destare-bandeja').value)||0,
+    pallets:parseFloat(document.getElementById('r-pallets').value)||0,
+    destarePalletUnit:parseFloat(document.getElementById('r-destare-pallet').value)||0,
+    destareTotal:((parseFloat(document.getElementById('r-bandejas').value)||0)*(parseFloat(document.getElementById('r-destare-bandeja').value)||0))+((parseFloat(document.getElementById('r-pallets').value)||0)*(parseFloat(document.getElementById('r-destare-pallet').value)||0)),
     campo_cuartel:document.getElementById('r-campo').value,
     envase:document.getElementById('r-envase').value,
     bandejas:parseInt(document.getElementById('r-bandejas').value)||0,
@@ -4604,7 +4671,8 @@ window.saveRecepcion=function(){
   showStatus('Recepción guardada ✓');
 }
 window.limpiarRecepcion=function(){
-  ['r-prov','r-rut','r-guia','r-kg','r-kg-neto','r-variedad','r-campo','r-obs','r-envase','r-bandejas','r-sag-prod','r-responsable'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['r-prov','r-rut','r-guia','r-kg','r-kg-neto','r-variedad','r-campo','r-obs','r-envase','r-bandejas','r-sag-prod','r-responsable','r-destare-bandeja','r-pallets','r-destare-pallet'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  var elDestareTotal=document.getElementById('r-destare-total');if(elDestareTotal)elDestareTotal.value='';
   var elEstadoAgro=document.getElementById('r-estado-agricola');if(elEstadoAgro)elEstadoAgro.value='';
   var elConserv=document.getElementById('r-conservacion');if(elConserv)elConserv.value='';
   var grupo=document.getElementById('grupo-sag-prod');if(grupo)grupo.style.display='none';
@@ -5328,9 +5396,11 @@ window.seleccionarProductorLiq = function(id){
 }
 window.limpiarSeleccionProdLiq = function(){
   window._liqProdSel = null;
+  window._liqPendientes = [];
   document.getElementById('liq-prod-seleccionado').style.display='none';
   document.getElementById('liq-resultados-card').style.display='none';
 }
+window._liqPendientes = [];
 window.buscarRecepcionesPendientesLiq = function(){
   var p = window._liqProdSel;
   if(!p){ alert('Primero selecciona un productor'); return; }
@@ -5345,12 +5415,140 @@ window.buscarRecepcionesPendientesLiq = function(){
     if(r.fecha < desde || r.fecha > hasta) return false;
     return true;
   });
+  // Cada línea guarda su propio estado de inclusión y precio unitario para el cálculo en vivo
+  window._liqPendientes = fil.map(function(r){
+    return {rec:r, incluido:true, precioUnitario:0};
+  });
+  document.getElementById('liq-retiene-iva').checked = false;
   document.getElementById('liq-resultados-card').style.display='block';
-  document.getElementById('tbody-liq-pendientes').innerHTML = fil.map(function(r){
+  renderTablaLiqPendientes();
+}
+
+function renderTablaLiqPendientes(){
+  var filas = window._liqPendientes;
+  document.getElementById('tbody-liq-pendientes').innerHTML = filas.map(function(item,idx){
+    var r = item.rec;
     var calidad = [r.estadoAgricola, r.variedad, r.conservacion].filter(Boolean).join(' · ') || '-';
-    return '<tr><td>'+fmtFecha(r.fecha)+'</td><td>'+r.especie+'</td><td style="font-size:11px;color:#555">'+calidad+'</td>'+
-      '<td>'+(r.guia||'-')+'</td><td>'+fmtNum(r.kg)+' kg</td><td>'+fmtNum(r.kgNeto)+' kg</td></tr>';
-  }).join('') || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin recepciones pendientes en ese rango de fechas</td></tr>';
+    var totalLinea = item.incluido ? (parseFloat(r.kgNeto)||0) * (item.precioUnitario||0) : 0;
+    return '<tr>'+
+      '<td><input type="checkbox" '+(item.incluido?'checked':'')+' onchange="toggleLineaLiq('+idx+',this.checked)" style="width:16px;height:16px"></td>'+
+      '<td>'+fmtFecha(r.fecha)+'</td><td>'+r.especie+'</td>'+
+      '<td style="font-size:11px;color:#555">'+calidad+'</td>'+
+      '<td>'+(r.guia||'-')+'</td><td>'+fmtNum(r.kg)+' kg</td><td>'+fmtNum(r.kgNeto)+' kg</td>'+
+      '<td><input type="number" step="1" min="0" value="'+(item.precioUnitario||'')+'" placeholder="0" '+
+        'style="width:100px;height:30px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px" '+
+        'oninput="actualizarPrecioLiq('+idx+',this.value)"></td>'+
+      '<td style="font-weight:600">$'+fmtNum(totalLinea)+'</td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1rem">Sin recepciones pendientes en ese rango de fechas</td></tr>';
+  recalcularLiquidacion();
+}
+
+window.toggleLineaLiq = function(idx, checked){
+  window._liqPendientes[idx].incluido = checked;
+  renderTablaLiqPendientes();
+}
+window.actualizarPrecioLiq = function(idx, valor){
+  window._liqPendientes[idx].precioUnitario = parseFloat(valor)||0;
+  // Solo recalcula totales; no vuelve a pintar la tabla completa para no perder el foco del input mientras se escribe
+  var r = window._liqPendientes[idx].rec;
+  var totalLinea = window._liqPendientes[idx].incluido ? (parseFloat(r.kgNeto)||0) * window._liqPendientes[idx].precioUnitario : 0;
+  var fila = document.querySelectorAll('#tbody-liq-pendientes tr')[idx];
+  if(fila){ var celdaTotal = fila.querySelectorAll('td')[8]; if(celdaTotal) celdaTotal.textContent = '$'+fmtNum(totalLinea); }
+  recalcularLiquidacion();
+}
+
+window.recalcularLiquidacion = function(){
+  var filas = window._liqPendientes.filter(function(item){ return item.incluido; });
+  var kilosPagar = filas.reduce(function(s,item){ return s + (parseFloat(item.rec.kgNeto)||0); }, 0);
+  var neto = filas.reduce(function(s,item){ return s + (parseFloat(item.rec.kgNeto)||0) * (item.precioUnitario||0); }, 0);
+  var retieneIva = document.getElementById('liq-retiene-iva')?.checked || false;
+  var ivaRetenido = retieneIva ? neto : 0;
+  var totalLiquidacion = neto;
+  var menosIvaRetenido = retieneIva ? neto : 0;
+  document.getElementById('liq-tot-kilos').value = fmtNum(kilosPagar)+' kg';
+  document.getElementById('liq-tot-neto').value = '$'+fmtNum(neto);
+  document.getElementById('liq-tot-iva').value = '$'+fmtNum(ivaRetenido);
+  document.getElementById('liq-tot-total').value = '$'+fmtNum(totalLiquidacion);
+  document.getElementById('liq-tot-menos-iva').value = '$'+fmtNum(menosIvaRetenido);
+}
+
+window.generarLiquidacion = async function(){
+  var p = window._liqProdSel;
+  if(!p){ alert('Primero selecciona un productor'); return; }
+  var filas = window._liqPendientes.filter(function(item){ return item.incluido; });
+  if(filas.length===0){ alert('No hay recepciones incluidas para liquidar'); return; }
+  var sinPrecio = filas.some(function(item){ return !(item.precioUnitario>0); });
+  if(sinPrecio && !confirm('Hay líneas incluidas con precio unitario en $0. ¿Continuar de todas formas?')) return;
+
+  var btn = document.getElementById('btn-generar-liq');
+  btn.disabled = true; btn.textContent='Generando...';
+
+  try{
+    var folio = await generarFolioLiquidacion();
+    var desde = document.getElementById('liq-fecha-desde').value;
+    var hasta = document.getElementById('liq-fecha-hasta').value;
+    var retieneIva = document.getElementById('liq-retiene-iva').checked;
+
+    var detalle = filas.map(function(item){
+      var r = item.rec;
+      var kgNeto = parseFloat(r.kgNeto)||0;
+      var totalPesos = kgNeto * item.precioUnitario;
+      return {
+        recepcionId: r.id, fecha:r.fecha, especie:r.especie,
+        estadoAgricola:r.estadoAgricola||'', variedad:r.variedad||'', conservacion:r.conservacion||'',
+        guia:r.guia||'', kgBruto:parseFloat(r.kg)||0, kgNeto:kgNeto,
+        precioUnitario:item.precioUnitario, totalPesos:totalPesos
+      };
+    });
+
+    // Resumen agrupado por especie + estado agrícola + variedad + conservación (igual formato que tus fotos)
+    var resumenMap = {};
+    detalle.forEach(function(d){
+      var key = [d.especie,d.estadoAgricola,d.variedad,d.conservacion].join('|');
+      if(!resumenMap[key]) resumenMap[key] = {especie:d.especie,estadoAgricola:d.estadoAgricola,variedad:d.variedad,conservacion:d.conservacion,kgNeto:0,totalPesos:0};
+      resumenMap[key].kgNeto += d.kgNeto;
+      resumenMap[key].totalPesos += d.totalPesos;
+    });
+    var resumen = Object.values(resumenMap);
+
+    var kilosPagar = detalle.reduce(function(s,d){ return s+d.kgNeto; },0);
+    var neto = detalle.reduce(function(s,d){ return s+d.totalPesos; },0);
+    var ivaRetenido = retieneIva ? neto : 0;
+    var totalLiquidacion = neto;
+    var menosIvaRetenido = retieneIva ? neto : 0;
+
+    var liquidacion = {
+      id: folio, folio: folio,
+      productorRut: p.rut||'', productorNombre: p.nombre||'',
+      fechaDesde: desde, fechaHasta: hasta,
+      fechaEmision: today(), retieneIva: retieneIva,
+      detalle: detalle, resumen: resumen,
+      resumenPesos: {kilosPagar:kilosPagar, neto:neto, ivaRetenido:ivaRetenido, totalLiquidacion:totalLiquidacion, menosIvaRetenido:menosIvaRetenido},
+      creadoPor: window._usuarioActual || '', _tsCreacion: Date.now()
+    };
+
+    await fbSave('liquidaciones', liquidacion);
+    DATA.liquidaciones.push(liquidacion);
+
+    // Marcar cada recepción incluida como Liquidada, enlazada al folio
+    for(var i=0;i<filas.length;i++){
+      var rec = filas[i].rec;
+      rec.estadoLiquidacion = 'Liquidado';
+      rec.liquidacionFolio = folio;
+      await fbSave('recepciones', rec);
+    }
+
+    showStatus('Liquidación '+folio+' generada ✓');
+    renderRecepcionHist();
+    limpiarSeleccionProdLiq();
+    alert('Liquidación generada con folio '+folio);
+  }catch(e){
+    console.error(e);
+    alert('Ocurrió un error generando la liquidación. Revisa la consola o inténtalo de nuevo.');
+  }finally{
+    btn.disabled = false; btn.innerHTML='<i class="ti ti-file-invoice"></i> Generar Liquidación';
+  }
 }
 
 function buscarProductorInput(){
