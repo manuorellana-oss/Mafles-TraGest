@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Importar Clientes - MAFLES TraGest</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',sans-serif;background:#f4f6f3;min-height:100vh;padding:20px}
+  .wrap{max-width:520px;margin:0 auto}
+  .card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+  h1{font-size:18px;color:#1a4a2e;margin-bottom:6px}
+  p{font-size:13px;color:#666;margin-bottom:14px;line-height:1.4}
+  label{font-size:12px;color:#555;font-weight:600;display:block;margin-bottom:4px}
+  input{width:100%;height:38px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:14px;margin-bottom:12px}
+  button{width:100%;height:42px;background:#1a4a2e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+  button:disabled{opacity:0.6;cursor:not-allowed}
+  #log{font-size:12px;color:#444;background:#fafafa;border-radius:8px;padding:12px;margin-top:14px;max-height:280px;overflow-y:auto;white-space:pre-wrap;display:none}
+  .ok{color:#1a4a2e}
+  .err{color:#c0392b}
+  .warn{color:#e65100}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Importar base de clientes</h1>
+    <p>Herramienta de uso único para cargar la base de 107 clientes a la colección <b>clientes</b> de Firestore. Inicia sesión con tu cuenta de administrador de TraGest y presiona "Importar".</p>
+    <div id="login-box">
+      <label>Correo</label>
+      <input type="email" id="email" placeholder="manuorellana@gmail.com" autocomplete="username">
+      <label>Contraseña</label>
+      <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password">
+      <button id="btn-login" onclick="hacerLogin()">Iniciar sesión</button>
+    </div>
+    <div id="import-box" style="display:none">
+      <p id="estado-sesion" style="color:#1a4a2e;font-weight:600"></p>
+      <button id="btn-import" onclick="importarClientes()">Importar 107 clientes</button>
+    </div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, getDocs, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:"AIzaSyClBEniGH5SaGCZQ6w_IXi2NQ_uCO329JM",
+  authDomain:"mafles-tragest.firebaseapp.com",
+  projectId:"mafles-tragest",
+  storageBucket:"mafles-tragest.appspot.com",
+  messagingSenderId:"298356574973",
+  appId:"1:298356574973:web:b1d17024aad7ffae8b8c94"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const CLIENTES = [{"rut": "77.165.284-0", "razonSocial": "AG LOS BATROS SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "4 SUR 1028"}, {"rut": "77.419.246-8", "razonSocial": "AGRICOLA SANTA MARIA SPA", "giro": "CULTIVO DE OTRAS PLANTAS PERENNES", "direccion": "los cristales"}, {"rut": "76.794.644-9", "razonSocial": "AGRÍCOLA Y COMERCIAL DOS ROBLES SPA", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "PARCELA 125, SAN JOSE"}, {"rut": "76.806.027-4", "razonSocial": "AGRÍCOLA Y COMERCIAL EMIFRUT SPA", "giro": "CULTIVO DE FRUTAS DE PEPITA Y DE HUESO", "direccion": "RTO.LT.A PAR.21 PRODYPORV S/N"}, {"rut": "78.230.822-k", "razonSocial": "AGRO RAICES SPA", "giro": "CULTIVO DE OTROS FRUTOS Y NUECES DE ÁRBOLES Y ARBUSTOS", "direccion": "LOS CRISTALES"}, {"rut": "76.225.936-2", "razonSocial": "AGROCOMERCIAL SEBASTIAN CABELLO FREDES SPA", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "CALLEJON STA CALATINA KM 1.2, GUAICO CHICO"}, {"rut": "77.186.133-4", "razonSocial": "AGROFRUITS SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "A BELLO 743 LC 47 A"}, {"rut": "9.863.573-4", "razonSocial": "ALAMIRO HERNAN NORAMBUENA AGURTO", "giro": "CULTIVO DE OTRAS PLANTAS PERENNES", "direccion": "LOS CRISTALES"}, {"rut": "76.794.646-5", "razonSocial": "ALICANTO SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "SAN MARTIN 142 Depto 5512"}, {"rut": "76.080.295-6", "razonSocial": "ANDIFUNGI EXPORTADORA S.A", "giro": "ELABORACIÓN DE OTROS PRODUCTOS ALIMENTICIOS N.C.P.", "direccion": "AV.  ANIBAL LEON BUSTOS 0925"}, {"rut": "11.531.872-1", "razonSocial": "ARNALDO FIGUEROA LUENGO", "giro": "CULTIVOS FORRAJEROS EN PRADERAS MEJORADAS O SEMBRADAS; CULTIVOS SUPLEMENTARIOS FORRAJEROS", "direccion": "la quinta"}, {"rut": "96.716.740-1", "razonSocial": "ARROCERA PALMILLA S A", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "PROY PC CUNACO 2, KM 285RTA 5 S"}, {"rut": "76.688.700-7", "razonSocial": "BERRIES CHILE S.A", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "SAN ANTONIO DE LAMAS KM 2,8"}, {"rut": "15.121.283-2", "razonSocial": "CARLOS ISMAEL GONZALEZ QUINTERO", "giro": "OTRAS ACTIVIDADES DE SERVICIOS PERSONALES N.C.P.", "direccion": "los cristales"}, {"rut": "12.372.053-9", "razonSocial": "CARLOS PATRICIO HERNANDEZ HERNANDEZ", "giro": "VENTA AL POR MAYOR NO ESPECIALIZADA", "direccion": "LOS CRISTALES"}, {"rut": "10.077.617-0", "razonSocial": "CARLOS SOTTOLICHEO", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "79.547.780-2", "razonSocial": "CARSOL FRUIT S.A.", "giro": "CULTIVO DE FRUTOS OLEAGINOSOS (INCLUYE EL CULTIVO DE ACEITUNAS)", "direccion": "AVENIDA LA DEHESA 1201 Depto 612, TORRE NORTE"}, {"rut": "16.000.840-7", "razonSocial": "CESAR BRIAN OYANEDEL PULGAR", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "los cristales"}, {"rut": "76.162.289-7", "razonSocial": "COMERCIAL AGROFRUTICOLA VALDES Y COMPANIA LIMITADA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "BAJO LOS ROMEROS S/N"}, {"rut": "76.234.545-5", "razonSocial": "COMERCIAL E INDUSTRIAL FRIGOBERRIES LIMITADA", "giro": "ELABORACIÓN Y CONSERVACIÓN DE FRUTAS, LEGUMBRES Y HORTALIZAS", "direccion": "LA AGUADA SUBDELEGACION 16"}, {"rut": "76.709.620-8", "razonSocial": "COMERCIAL LATAM PRODUCTS LIMITADA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "AV LOS CONQUISTADORES 1700, PISO 27-A"}, {"rut": "76.561.973-4", "razonSocial": "COMERCIAL Y AGRICOLA WILSON ALEJANDRO CAMPOS ALVAREZ E.I.R.L.", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "BAQUEDANO 491"}, {"rut": "77.833.337-6", "razonSocial": "COMERCIALIZADORA AGRICOLA MG LIMITADA", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "los cristales"}, {"rut": "78.242.326-6", "razonSocial": "COMERCIALIZADORA DEL VALLE SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "los cristales"}, {"rut": "77.270.597-2", "razonSocial": "COMERCIALIZADORA FRUTICOLA OLMUE SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "CAMINO PARQUE LANTAÑO 100"}, {"rut": "76.673.987-3", "razonSocial": "COMERCIALIZADORA JL DEL BOSQUE SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "BAQUEDANO INTERIOR 9664-A, RENE SCHNAIDER"}, {"rut": "76.222.522-0", "razonSocial": "COMERCIALIZADORA MAFLES SPA.", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "CASA 13-A, LOS CIRUELOS"}, {"rut": "77.498.157-8", "razonSocial": "COMERCIALIZADORA OLMUE SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "camino parque lantañao #100"}, {"rut": "77.279.256-5", "razonSocial": "COMERCIALIZADORA ORSKOV FOODS SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "HIJ. 6 FUNDO LA VICTORIALT. 7"}, {"rut": "76.117.869-5", "razonSocial": "COMERCIALIZADORA SAN ESTEBAN LIMITADA", "giro": "VENTA AL POR MAYOR NO ESPECIALIZADA", "direccion": "RESTO PARCELA 43 LOTE 3, SAN ESTEBAN"}, {"rut": "77.675.577-k", "razonSocial": "COMERCIALIZADORA TR SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "LOS CRISTALES"}, {"rut": "76.377.095-8", "razonSocial": "COMERCIALIZADORA VIFRUT LIMITADA", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "RETAZO PARCELA 3, LLANCANAO"}, {"rut": "77.482.236-4", "razonSocial": "COMFRUT CHILE SPA", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "LOS CRISTALES"}, {"rut": "13.791.190-6", "razonSocial": "CRISTIAN ANTONIO FAUNDEZ TAPIA", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "LOS CRISTALES"}, {"rut": "15.567.783-k", "razonSocial": "CRISTOBAL ANDRES CERDA GONZALEZ", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "12.909.109-6", "razonSocial": "DANIEL ROBERTO SOLORZA ALARCON", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "LOS CRISTALES"}, {"rut": "78.131.784-5", "razonSocial": "DJF ALIMENTOS SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "los cristales"}, {"rut": "14.182.550-k", "razonSocial": "DORIS VIRGINIA CARDENAS CARDENAS", "giro": "VENTA AL POR MENOR DE ALIMENTOS EN COMERCIOS ESPECIALIZADOS (ALMACENES PEQUEÑOS Y MINIMARKET)", "direccion": "LOS CRISTALES"}, {"rut": "77.826.136-7", "razonSocial": "DW INTERNACIONAL SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "Carmen 747 Of .  91"}, {"rut": "10.406.586-4", "razonSocial": "EDUARDO ANTONIO ALARCON MOLINA", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "10.889.142-4", "razonSocial": "EDUARDO SILVA", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "11.890.824-4", "razonSocial": "EUGENIO RAMON ROMO BUSTOS", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "los cristlaes"}, {"rut": "77.713.645-3", "razonSocial": "EXPORTADORA Y COMERCIAL FRIGOBERRIES SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "LA AGUADA"}, {"rut": "17.387.613-0", "razonSocial": "FELIPE EDUARDO GUTIERREZ CABRERA", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "los cristales"}, {"rut": "6.196.768-0", "razonSocial": "FELIPE FRANCISCO MARTINEZ ORMENO", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "LOS CRISTALES"}, {"rut": "15.492.112-5", "razonSocial": "FERNANDO ANDRES CONTRERAS SAEZ", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "los cristales"}, {"rut": "10.152.895-2", "razonSocial": "FLORENTINO ANTONIO SALVO CEA", "giro": "CULTIVOS FORRAJEROS EN PRADERAS MEJORADAS O SEMBRADAS; CULTIVOS SUPLEMENTARIOS FORRAJEROS", "direccion": "los cristales"}, {"rut": "17.171.891-0", "razonSocial": "FREDDY ANDRES CAMPOS ALVAREZ", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "16.855.394-3", "razonSocial": "FREDDY RICARDO FARIAS GALLEGUILLOS", "giro": "OTRAS ACTIVIDADES DE SERVICIOS PERSONALES N.C.P.", "direccion": "los cristales"}, {"rut": "76.078.112-6", "razonSocial": "FRUTICOLA OLMUE SPA", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "CAMINO PARQUE LANTAÑO 100"}, {"rut": "76.092.543-8", "razonSocial": "FRUTICOLA PATRICIO HERNAN VALDIVIA VALDIVIA E.I.R.L.", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "AVDA. RAMON FREIRE 4345"}, {"rut": "15.156.228-0", "razonSocial": "GERARDO LOPEZ FUENTES", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CIRUELOS"}, {"rut": "12.372.724-k", "razonSocial": "GERMAN ENRIQUE GARRIDO FLORES", "giro": "LIMPIEZA GENERAL DE EDIFICIOS", "direccion": "LOS CRISTALES"}, {"rut": "9.969.615-k", "razonSocial": "HUGO AGUSTIN CORNEJO MORALES", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "LOS CRISTALES"}, {"rut": "19.723.658-2", "razonSocial": "IGNACIO ALEJANDRO CONTRERAS ACUNA", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "LOS CRISTALES"}, {"rut": "96.844.830-7", "razonSocial": "INVERTEC NATURAL JUICE S A", "giro": "VENTA AL POR MAYOR NO ESPECIALIZADA", "direccion": "AV. PRESIDENTE KENNEDY 9070, Bloque OFIC. Depto 701"}, {"rut": "15.151.953-9", "razonSocial": "JAIME PATRICIO INOSTROZA GONZALEZ", "giro": "OTRAS ACTIVIDADES DE SERVICIOS PERSONALES N.C.P.", "direccion": "LOS CRISTALES"}, {"rut": "18.366.470-0", "razonSocial": "JAVIER PARRA", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "15.567.959-k", "razonSocial": "JEANNETTE FERNANDA DUARTE OLIVOS", "giro": "CULTIVO DE FRUTAS DE PEPITA Y DE HUESO", "direccion": "LOS CRISTALES"}, {"rut": "10.433.108-4", "razonSocial": "JORGE ALBERTO TAPIA GONZALEZ", "giro": "CULTIVO DE FRUTOS OLEAGINOSOS (INCLUYE EL CULTIVO DE ACEITUNAS)", "direccion": "la quinta sur"}, {"rut": "10.748.096-k", "razonSocial": "JORGE MARCOS NEGRETE SILVA", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "los cristales"}, {"rut": "76.454.227-4", "razonSocial": "JOVITA DEL PILAR ARAYA LAGOS E.I.R.L.", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "SITIO 40, PARCELA  95 SAN JOSE"}, {"rut": "10.132.792-2", "razonSocial": "JUAN CARLOS VALDES TILLERIA", "giro": "CULTIVO DE FRUTOS OLEAGINOSOS (INCLUYE EL CULTIVO DE ACEITUNAS)", "direccion": "LA QUINTA SUR"}, {"rut": "12.316.896-8", "razonSocial": "JUAN CLAUDIO GONZALEZ INOSTROZA", "giro": "CULTIVO DE FRUTOS OLEAGINOSOS (INCLUYE EL CULTIVO DE ACEITUNAS)", "direccion": "LOS CRISTALES"}, {"rut": "15.152.917-8", "razonSocial": "JUAN ENRIQUE PACHECO NORAMBUENA", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "10.292.710-9", "razonSocial": "LEONARDO ANTONIO INOSTROZA SALAS", "giro": "CULTIVO DE TRIGO", "direccion": "COLONIA KENEDY PARCELA 115 PAINE"}, {"rut": "14.389.029-5", "razonSocial": "LEONARDO ANTONIO MAUREIRA PEREIRA", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "los cristales"}, {"rut": "15.817.263-1", "razonSocial": "LUIS ANIBAL OYANEDEL PULGAR", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "PJE SAN ENRIQUE SAN PEDRO 229 SOL DE JULIO"}, {"rut": "15.820.993-4", "razonSocial": "MANUEL ARTURO ARCE GONZALEZ", "giro": "OTRAS ACTIVIDADES DE SERVICIOS PERSONALES N.C.P.", "direccion": "LOS CRISTALES"}, {"rut": "9.051.945-k", "razonSocial": "MANUEL EDMUNDO SUZARTE OSSES", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "15.921.384-6", "razonSocial": "MANUEL HORMAZABAL", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "14.022.491-k", "razonSocial": "MANUEL LEODAN ARAUNA FUENTES", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "los cristales"}, {"rut": "8.346.820-3", "razonSocial": "MARCO ANTONIO ARAVENA CARVALLO", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "AVENIDA LA PAZ 236"}, {"rut": "12.963.420-0", "razonSocial": "MARCO ANTONIO ASTUDILLO CASTILLO", "giro": "CULTIVO DE REMOLACHA AZUCARERA", "direccion": "los cristales"}, {"rut": "13.596.266-k", "razonSocial": "MARIA ELISA ARANCIBIA SALINAS", "giro": "ACTIVIDADES DE RESTAURANTES Y DE SERVICIO MÓVIL DE COMIDAS", "direccion": "LOS CRISTALES"}, {"rut": "77.138.652-0", "razonSocial": "NATURAL FRUITS SPA", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "POB Y BUENAS MZ C LT 10"}, {"rut": "76.164.267-7", "razonSocial": "ORSKOV FOODS SPA", "giro": "ELABORACIÓN Y CONSERVACIÓN DE FRUTAS, LEGUMBRES Y HORTALIZAS", "direccion": "HIJ. 6 FUNDO LA VICTORIA LOTE 7"}, {"rut": "10.923.732-9", "razonSocial": "OSCAR ANTONIO GUZMAN ROSALES", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "10.913.995-5", "razonSocial": "PATRICIO IVAN BURGOS RIQUELME", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "los cristales"}, {"rut": "13.576.781-6", "razonSocial": "PATRICIO PACHECO", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "17.251.944-k", "razonSocial": "PIA CONSTANZA SALAS ZAMUR", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "LOS CRISTALES"}, {"rut": "78.463.790-5", "razonSocial": "PROCESADORA Y EXPORTADORA DE FRUTAS Y VEGETALES LIMITADA", "giro": "ELABORACIÓN DE OTROS PRODUCTOS ALIMENTICIOS N.C.P.", "direccion": "LAS TOSCAS RUTA L-25 KM 7"}, {"rut": "18.981.407-0", "razonSocial": "RAFAEL ANTONIO TAPIA PACHECO", "giro": "ACTIVIDADES DE VETERINARIOS, TÉCNICOS Y OTRO PERSONAL AUXILIAR, PRESTADOS DE FORMA INDEPENDIENTE", "direccion": "los cristales"}, {"rut": "76.538.464-8", "razonSocial": "RAMIFRUT  SPA", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "LOS CARDENALES 836-A, LAS CAMELIAS"}, {"rut": "77.659.437-7", "razonSocial": "RAMIFRUT UNO SPA", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "los cristales"}, {"rut": "15.697.342-4", "razonSocial": "REMIGIO ALEJANDRO ESPINACE FUENTES", "giro": "CULTIVO DE OTROS FRUTOS Y NUECES DE ÁRBOLES Y ARBUSTOS", "direccion": "los cristales"}, {"rut": "77.542.365-k", "razonSocial": "RIO FUTURO PROCESOS SPA", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "LOS CRISTALES"}, {"rut": "13.791.170-1", "razonSocial": "ROBERTO CARLOS BADILLA LUENGO", "giro": "CULTIVO DE OTRAS PLANTAS PERENNES", "direccion": "los cristales"}, {"rut": "13.614.142-2", "razonSocial": "ROBERTO CARLOS RETAMAL PEREIRA", "giro": "OTRAS ACTIVIDADES DE SERVICIOS PERSONALES N.C.P.", "direccion": "LOS CRISTALES"}, {"rut": "8.144.786-1", "razonSocial": "ROBERTO DEL CARMEN VALDES OLMEDO", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "los cristales"}, {"rut": "13.351.067-2", "razonSocial": "RODRIGO MARCELO PONCE MARCHANT", "giro": "VENTA AL POR MENOR EN COMERCIOS ESPECIALIZADOS DE FRUTAS Y VERDURAS (VERDULERÍAS)", "direccion": "LOS CRISTALES"}, {"rut": "79.765.770-0", "razonSocial": "SANTIAGO COMERCIO EXTERIOR EXPORTACIONES S A", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "LO VALDIVIA S/N KM 8 S/N, SAGRADA FAMILIA"}, {"rut": "14.476.068-9", "razonSocial": "SERGIO MAURICIO LASTRA CARRENO", "giro": "ACTIVIDADES DE APOYO A LA AGRICULTURA", "direccion": "LOS CRISTALES"}, {"rut": "19.895.374-1", "razonSocial": "SERGIO MUÑOZ", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "LOS CRISTALES"}, {"rut": "76.380.690-1", "razonSocial": "SOCIEDAD AGRICOLA GALVEZ Y COMPAÑIA LIMITADA", "giro": "CULTIVO DE FRUTAS DE PEPITA Y DE HUESO", "direccion": "PARCELA 22, SANTA REBECA"}, {"rut": "77.569.653-2", "razonSocial": "SOCIEDAD AGRÍCOLA LADERAS DEL VALLE SPA", "giro": "CULTIVO DE FRUTAS DE PEPITA Y DE HUESO", "direccion": "los ciruelos"}, {"rut": "77.699.622-k", "razonSocial": "SOCIEDAD AGRICOLA RENACER SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "LOS CRISTALES"}, {"rut": "77.979.150-5", "razonSocial": "SOCIEDAD AGRICOLA Y AGROINDUSTRIAL SEVERINO HORTA LIMITADA", "giro": "VENTA AL POR MAYOR DE MATERIAS PRIMAS AGRÍCOLAS", "direccion": "LOTE 2 A"}, {"rut": "76.004.689-2", "razonSocial": "SOCIEDAD COMERCIAL Y AGRICOLA KESCO CHILE Y COMPANIA LIMITADA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "PANAMERICANA SUR 1288"}, {"rut": "77.035.646-6", "razonSocial": "THOMAS FRESH SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "EL GUINDO 0, GUAICO LT B"}, {"rut": "77.494.052-9", "razonSocial": "TUTYS BERRIES SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "ROMERAL"}, {"rut": "77.598.126-1", "razonSocial": "VALLE FRIO SPA", "giro": "VENTA AL POR MAYOR NO ESPECIALIZADA", "direccion": "ROMERAL"}, {"rut": "77.180.654-6", "razonSocial": "VITAFOODS SPA", "giro": "VENTA AL POR MAYOR DE FRUTAS Y VERDURAS", "direccion": "LAS CONDES 11380 OF 72 TORRE A"}, {"rut": "84.356.800-9", "razonSocial": "WATT'S  S.A.", "giro": "ELABORACIÓN DE OTROS PRODUCTOS ALIMENTICIOS N.C.P.", "direccion": "AVDA.PDTE.J.ALESSANDRI 10501"}, {"rut": "76.455.830-8", "razonSocial": "WATT'S S.A", "giro": "ELABORACIÓN DE OTROS PRODUCTOS ALIMENTICIOS N.C.P.", "direccion": "AV.PDTE JORGE ALESSANDRI 10501"}, {"rut": "76.480.428-7", "razonSocial": "XIMENA DEL CARMEN INOSTROZA HERNANDEZ VENTA POR MAYOR DE OTROS PRODUCT", "giro": "CORRETAJE AL POR MAYOR DE PRODUCTOS AGRÍCOLAS", "direccion": "INDEPENDENCIA 970, SANTA AMELIA"}, {"rut": "16.857.550-5", "razonSocial": "Yoselin Labra Sepulveda", "giro": "SIN INICIO DE ACTIVIDADES", "direccion": "los cristales"}];
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+
+function log(msg, cls){
+  const el = document.getElementById('log');
+  el.style.display = 'block';
+  const line = document.createElement('div');
+  if(cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+window.hacerLogin = async function(){
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('pass').value;
+  const btn = document.getElementById('btn-login');
+  btn.disabled = true; btn.textContent = 'Ingresando...';
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+    document.getElementById('login-box').style.display = 'none';
+    document.getElementById('import-box').style.display = 'block';
+    document.getElementById('estado-sesion').textContent = 'Sesión iniciada como ' + email;
+  }catch(e){
+    console.error(e);
+    alert('No se pudo iniciar sesión: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Iniciar sesión';
+  }
+}
+
+window.importarClientes = async function(){
+  const btn = document.getElementById('btn-import');
+  btn.disabled = true; btn.textContent = 'Importando...';
+  log('Revisando clientes ya existentes en Firestore...');
+
+  const existentesSnap = await getDocs(collection(db, 'clientes'));
+  const rutsExistentes = new Set();
+  existentesSnap.forEach(d => {
+    const r = (d.data().rut || '').toString().trim().toLowerCase();
+    if(r) rutsExistentes.add(r);
+  });
+  log('Clientes ya cargados en el sistema: ' + rutsExistentes.size, 'warn');
+
+  let creados = 0, saltados = 0, errores = 0;
+  for(const c of CLIENTES){
+    const rutNorm = (c.rut || '').toString().trim().toLowerCase();
+    if(rutNorm && rutsExistentes.has(rutNorm)){
+      log('— Ya existe, se omite: ' + c.razonSocial, 'warn');
+      saltados++;
+      continue;
+    }
+    try{
+      const id = uid();
+      await setDoc(doc(db, 'clientes', id), {
+        id, rut: c.rut || '', razonSocial: c.razonSocial || '', giro: c.giro || '',
+        direccion: c.direccion || '', creadoPor: 'importacion-inicial', _tsCreacion: Date.now(), _ts: Date.now()
+      });
+      log('✓ Creado: ' + c.razonSocial, 'ok');
+      creados++;
+      if(rutNorm) rutsExistentes.add(rutNorm);
+    }catch(e){
+      console.error(e);
+      log('✗ Error con ' + c.razonSocial + ': ' + e.message, 'err');
+      errores++;
+    }
+  }
+
+  log('----------------------------------------');
+  log('Listo. Creados: ' + creados + '  ·  Omitidos (ya existían): ' + saltados + '  ·  Errores: ' + errores, 'ok');
+  btn.textContent = 'Importación finalizada';
+}
+</script>
+</body></html>
