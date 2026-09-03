@@ -5587,10 +5587,18 @@ window.borrarSeleccionadosRec=async function(){
   var ids=Array.from(document.querySelectorAll('.chk-rec-row:checked')).map(function(c){return c.value;});
   if(!ids.length) return;
   if(!confirm('¿Seguro que quieres eliminar '+ids.length+' recepción(es) seleccionada(s)? Esta acción no se puede deshacer.')) return;
+  var exitosos=0;
   for(var i=0;i<ids.length;i++){
-    await delRec(ids[i],true);
+    var fue=await delRec(ids[i],true);
+    if(fue) exitosos++;
   }
-  showStatus(ids.length+' recepción(es) eliminada(s) ✓');
+  if(exitosos===ids.length){
+    showStatus(exitosos+' recepción(es) eliminada(s) ✓');
+  }else if(exitosos===0){
+    showStatus('No se pudo eliminar ninguna (revisa permisos)');
+  }else{
+    showStatus(exitosos+' de '+ids.length+' eliminadas — el resto falló (revisa permisos)');
+  }
 }
 
 // ===== CONSTANCIA DE RECEPCIÓN (PDF) =====
@@ -5685,11 +5693,14 @@ window.delRecEnv=async function(id){
   renderEnvIngresos();renderSaldo();
 }
 window.delRec=async function(id,skipConfirm){
-  if(!skipConfirm && !confirm('¿Eliminar esta recepción?'))return;
+  if(!skipConfirm && !confirm('¿Eliminar esta recepción?'))return false;
   const rec=DATA.recepciones.find(r=>r.id===id);
-  if(rec?._fid) await fbDel('recepciones',rec._fid,rec);
+  var ok=true;
+  if(rec?._fid) ok=await fbDel('recepciones',rec._fid,rec);
+  if(!ok) return false;
   DATA.recepciones=DATA.recepciones.filter(r=>r.id!==id);
   renderRecepcionHist();renderEnvIngresos();renderQrList();
+  return true;
 }
 
 // ===== CAMPO SAVE =====
@@ -6116,21 +6127,30 @@ window.borrarSeleccionadosKpi=async function(){
   var ids=Array.from(document.querySelectorAll('.chk-kpi-row:checked')).map(function(c){return c.value;});
   if(!ids.length) return;
   if(!confirm('¿Seguro que quieres eliminar '+ids.length+' registro(s) de KPI seleccionado(s)? Esta acción no se puede deshacer.')) return;
+  var exitosos=0;
   for(var i=0;i<ids.length;i++){
-    await delKpi(ids[i],true);
+    var fue=await delKpi(ids[i],true);
+    if(fue) exitosos++;
   }
-  showStatus(ids.length+' KPI eliminado(s) ✓');
+  if(exitosos===ids.length){
+    showStatus(exitosos+' KPI eliminado(s) ✓');
+  }else if(exitosos===0){
+    showStatus('No se pudo eliminar ninguno (revisa permisos)');
+  }else{
+    showStatus(exitosos+' de '+ids.length+' eliminados — el resto falló (revisa permisos)');
+  }
 }
 
 window.delKpi=async function(id,skipConfirm){
-  if(!skipConfirm && !confirm('¿Eliminar este registro KPI?'))return;
+  if(!skipConfirm && !confirm('¿Eliminar este registro KPI?'))return false;
   var r=DATA.kpi.find(function(x){return x.id===id;});
   var ok=true;
   if(r&&r._fid) ok=await fbDel('kpi',r._fid,r);
-  if(!ok) return;
+  if(!ok) return false;
   DATA.kpi=DATA.kpi.filter(function(x){return x.id!==id;});
   renderKpiHist();
   if(!skipConfirm) showStatus('KPI eliminado');
+  return true;
 }
 
 
