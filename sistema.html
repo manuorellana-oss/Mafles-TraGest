@@ -712,9 +712,10 @@ tr:hover td{background:#f8fcf8}
 </select>
           <button class="btn btn-secondary" style="height:32px;font-size:12px" onclick="renderRecepcionHist()"><i class="ti ti-search"></i> Buscar</button>
           <button class="btn btn-export" onclick="exportarExcel(&#39;recepciones&#39;,&#39;tbl-rec&#39;)"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+          <button class="btn btn-danger" id="btn-borrar-sel-rec" style="height:32px;font-size:12px;display:none" onclick="borrarSeleccionadosRec()"><i class="ti ti-trash"></i> Eliminar seleccionados (<span id="cont-sel-rec">0</span>)</button>
         </div>
         <div class="tbl-wrap"><table id="tbl-rec">
-          <thead><tr><th>Fecha</th><th>Productor</th><th>Especie</th><th>Calidad</th><th>Kg Brutos</th><th>Kg Netos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th>Env. Ingr.</th><th>Env. Dev.</th><th>Saldo Env.</th><th>Deudor</th><th></th></tr></thead>
+          <thead><tr><th style="width:32px"><input type="checkbox" id="chk-rec-all" onchange="toggleTodosRec(this)" style="cursor:pointer"></th><th>Fecha</th><th>Productor</th><th>Especie</th><th>Calidad</th><th>Kg Brutos</th><th>Kg Netos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th>Env. Ingr.</th><th>Env. Dev.</th><th>Saldo Env.</th><th>Deudor</th><th></th></tr></thead>
           <tbody id="tbody-rec"></tbody>
         </table></div>
       </div>
@@ -5526,6 +5527,7 @@ window.renderRecepcionHist=function(){
     var colorSal=sal>0?'#c0392b':sal<0?'#e67e22':'#27ae60';
     return `
     <tr>
+      <td><input type="checkbox" class="chk-rec-row" value="${r.id}" onchange="actualizarContadorSelRec()" style="cursor:pointer"></td>
       <td>${fmtFecha(r.fecha)}</td><td>${r.proveedor}</td><td>${r.especie}</td>
       <td style="font-size:11px;color:#555">${[r.estadoAgricola,r.variedad,r.conservacion].filter(Boolean).join(' · ')||'-'}</td>
       <td>${fmtNum(r.kg)} kg</td><td>${fmtNum(r.kgNeto)} kg</td><td>${r.bandejas||0}</td><td>${r.guia||'-'}</td>
@@ -5538,7 +5540,29 @@ window.renderRecepcionHist=function(){
         <button class="btn btn-secondary" style="height:30px;font-size:11px;padding:0 8px;margin-right:4px" onclick="generarConstanciaRecepcion('${r.id}')"><i class="ti ti-file-download"></i> Constancia</button>
         <button class="btn btn-danger" style="height:30px;font-size:15px;padding:0 10px;min-width:36px" onclick="delRec('${r.id}')">🗑️</button>
       </td>
-    </tr>`;}).join('')||'<tr><td colspan="14" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
+    </tr>`;}).join('')||'<tr><td colspan="15" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
+  var chkAll=document.getElementById('chk-rec-all'); if(chkAll) chkAll.checked=false;
+  actualizarContadorSelRec();
+}
+window.toggleTodosRec=function(chkAll){
+  document.querySelectorAll('.chk-rec-row').forEach(function(c){c.checked=chkAll.checked;});
+  actualizarContadorSelRec();
+}
+window.actualizarContadorSelRec=function(){
+  var n=document.querySelectorAll('.chk-rec-row:checked').length;
+  var btn=document.getElementById('btn-borrar-sel-rec');
+  var cont=document.getElementById('cont-sel-rec');
+  if(cont) cont.textContent=n;
+  if(btn) btn.style.display=n>0?'inline-flex':'none';
+}
+window.borrarSeleccionadosRec=async function(){
+  var ids=Array.from(document.querySelectorAll('.chk-rec-row:checked')).map(function(c){return c.value;});
+  if(!ids.length) return;
+  if(!confirm('¿Seguro que quieres eliminar '+ids.length+' recepción(es) seleccionada(s)? Esta acción no se puede deshacer.')) return;
+  for(var i=0;i<ids.length;i++){
+    await delRec(ids[i]);
+  }
+  showStatus(ids.length+' recepción(es) eliminada(s) ✓');
 }
 
 // ===== CONSTANCIA DE RECEPCIÓN (PDF) =====
