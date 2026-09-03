@@ -5357,7 +5357,10 @@ window.saveDev=function(){
   const prov=document.getElementById('dev-prov').value.trim();
   if(!prov){alert('Ingresa proveedor');return}
   const dev={id:uid(),fecha:document.getElementById('dev-fecha').value||today(),proveedor:prov,tipo:document.getElementById('dev-tipo').value,cantidad:parseInt(document.getElementById('dev-cant').value)||0,obs:document.getElementById('dev-obs').value,creadoPor:window._usuarioActual||'',_tsCreacion:Date.now()};
-  DATA.devoluciones.push(dev);fbSave('devoluciones',dev);renderDevHist();showStatus('Devolución registrada ✓');
+  DATA.devoluciones.push(dev);fbSave('devoluciones',dev);renderDevHist();
+  if(typeof renderRecepcionHist==='function') renderRecepcionHist();
+  if(typeof renderSaldo==='function') renderSaldo();
+  showStatus('Devolución registrada ✓');
 }
 function renderDevHist(){
   var prov=(document.getElementById('fil-env-dev-prov')?.value||'').toLowerCase();
@@ -5383,6 +5386,8 @@ window.delDev=async function(id){
   const d=DATA.devoluciones.find(x=>x.id===id);
   if(d?._fid) await fbDel('devoluciones',d._fid,d);
   DATA.devoluciones=DATA.devoluciones.filter(x=>x.id!==id);renderDevHist();
+  if(typeof renderRecepcionHist==='function') renderRecepcionHist();
+  if(typeof renderSaldo==='function') renderSaldo();
 }
 function calcSaldoEnvasesRaw(periodoSal){
   var hoyS=new Date();hoyS.setHours(0,0,0,0);
