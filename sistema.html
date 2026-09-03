@@ -4595,7 +4595,14 @@ async function fbDel(col,fid,registroEliminado){
       _ts:Date.now()
     });
   }catch(e){ console.warn('No se pudo registrar auditoría de borrado:',e); }
-  try{await window._deleteDoc(window._doc(window._db,col,fid))}catch(e){}
+  try{
+    await window._deleteDoc(window._doc(window._db,col,fid));
+    return true;
+  }catch(e){
+    console.error('Error al borrar en Firestore ('+col+'):', e);
+    showStatus('No se pudo eliminar: '+(e.code||e.message||'error desconocido'));
+    return false;
+  }
 }
 
 window.addEventListener('fbReady',()=>{
@@ -6118,7 +6125,9 @@ window.borrarSeleccionadosKpi=async function(){
 window.delKpi=async function(id,skipConfirm){
   if(!skipConfirm && !confirm('¿Eliminar este registro KPI?'))return;
   var r=DATA.kpi.find(function(x){return x.id===id;});
-  if(r&&r._fid) await fbDel('kpi',r._fid,r);
+  var ok=true;
+  if(r&&r._fid) ok=await fbDel('kpi',r._fid,r);
+  if(!ok) return;
   DATA.kpi=DATA.kpi.filter(function(x){return x.id!==id;});
   renderKpiHist();
   if(!skipConfirm) showStatus('KPI eliminado');
