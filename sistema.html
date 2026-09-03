@@ -5560,7 +5560,7 @@ window.borrarSeleccionadosRec=async function(){
   if(!ids.length) return;
   if(!confirm('¿Seguro que quieres eliminar '+ids.length+' recepción(es) seleccionada(s)? Esta acción no se puede deshacer.')) return;
   for(var i=0;i<ids.length;i++){
-    await delRec(ids[i]);
+    await delRec(ids[i],true);
   }
   showStatus(ids.length+' recepción(es) eliminada(s) ✓');
 }
@@ -5656,8 +5656,8 @@ window.delRecEnv=async function(id){
   DATA.recepciones=DATA.recepciones.filter(r=>r.id!==id);
   renderEnvIngresos();renderSaldo();
 }
-window.delRec=async function(id){
-  if(!confirm('¿Eliminar esta recepción?'))return;
+window.delRec=async function(id,skipConfirm){
+  if(!skipConfirm && !confirm('¿Eliminar esta recepción?'))return;
   const rec=DATA.recepciones.find(r=>r.id===id);
   if(rec?._fid) await fbDel('recepciones',rec._fid,rec);
   DATA.recepciones=DATA.recepciones.filter(r=>r.id!==id);
