@@ -4655,13 +4655,21 @@ window.selProv=function(inputId,dropId,prov,rut){
   doAutofillProv(inputId,prov);
   // Autofill RUT y tipo envase en devoluciones
   if(inputId==='dev-prov'){
-    var match=DATA.recepciones.find(function(r){return r.proveedor===prov;});
+    var normProv=function(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();};
+    var provNorm=normProv(prov);
+    // Buscar en recepciones (más reciente primero) y, si no aparece ahí, en campo
+    var match=DATA.recepciones.slice().reverse().find(function(r){return normProv(r.proveedor)===provNorm;})
+      || DATA.campo.slice().reverse().find(function(r){return normProv(r.proveedor)===provNorm;});
     if(match){
       var rutEl=document.getElementById('dev-rut');
-      if(rutEl) rutEl.value=match.rut||'';
+      if(rutEl) rutEl.value=match.rut||rut||'';
       // Autofill tipo envase según especie
       var tipoEl=document.getElementById('dev-tipo');
       if(tipoEl&&match.envase) tipoEl.value=match.envase;
+    }else if(rut){
+      // Sin match en recepciones/campo: usar el RUT que ya trae el buscador de proveedores
+      var rutEl2=document.getElementById('dev-rut');
+      if(rutEl2) rutEl2.value=rut;
     }
   }
 }
@@ -5390,15 +5398,16 @@ function calcSaldoEnvasesRaw(periodoSal){
     saldo[k].ing+=parseInt(r.bandejas)||0;
   });
   // Descontar devoluciones
+  var normTxt=function(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();};
   DATA.devoluciones.forEach(function(d){
     // Buscar todas las entradas del proveedor y descontar por tipo de envase
     Object.keys(saldo).forEach(function(k){
       var s=saldo[k];
-      if(s.prov===d.proveedor){
+      if(normTxt(s.prov)===normTxt(d.proveedor)){
         // Match flexible: si el tipo devuelto contiene las primeras palabras del envase
-        var envBase=s.env.split('(')[0].trim().toLowerCase();
-        var tipoBase=d.tipo.split('(')[0].trim().toLowerCase();
-        if(envBase===tipoBase||s.env===d.tipo||d.tipo.startsWith(envBase)){
+        var envBase=normTxt(s.env.split('(')[0]);
+        var tipoBase=normTxt((d.tipo||'').split('(')[0]);
+        if(envBase===tipoBase||normTxt(s.env)===normTxt(d.tipo)||tipoBase.startsWith(envBase)||envBase.startsWith(tipoBase)){
           s.dev+=parseInt(d.cantidad)||0;
         }
       }
