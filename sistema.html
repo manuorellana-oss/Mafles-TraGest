@@ -568,6 +568,7 @@ tr:hover td{background:#f8fcf8}
       </style>
 
       <div id="res-header-box"></div>
+      <div id="panel-usuarios-online" class="res-especie-card" style="border-left-color:#2e7d52;display:none"></div>
 
       <div class="res-fecha-sel">
         <label><i class="ti ti-calendar"></i> Ver resumen del día:</label>
@@ -4602,6 +4603,47 @@ async function fbLoad(col){
     return snap.docs.map(d=>({...d.data(),_fid:d.id}));
   }catch(e){return[]}
 }
+// ===== PRESENCIA: quién está usando el sistema ahora mismo =====
+function slugUsuario(nombre){
+  return (nombre||'anon').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-');
+}
+window._presenciaInterval=null;
+function iniciarPresencia(){
+  var enviarLatido=function(){
+    fbSave('sesiones',{id:'ses-'+slugUsuario(window._usuarioActual),usuario:window._usuarioActual,rol:rolActual,ultimaActividad:Date.now()});
+    var modRes=document.getElementById('mod-resumen');
+    if(modRes&&modRes.classList.contains('active')) renderUsuariosOnline();
+  };
+  enviarLatido();
+  if(window._presenciaInterval) clearInterval(window._presenciaInterval);
+  window._presenciaInterval=setInterval(enviarLatido,30000);
+}
+async function renderUsuariosOnline(){
+  var cont=document.getElementById('panel-usuarios-online');
+  if(!cont) return;
+  if(!window._esAdmin){cont.style.display='none';return;}
+  try{
+    var rows=await fbLoad('sesiones');
+    var ahora=Date.now();
+    var activos=rows.filter(function(r){return (ahora-(r.ultimaActividad||0))<3*60*1000;});
+    activos.sort(function(a,b){return (b.ultimaActividad||0)-(a.ultimaActividad||0);});
+    cont.style.display='block';
+    if(!activos.length){
+      cont.innerHTML='<div style="font-size:13px;color:#888">🔴 Nadie más conectado en este momento.</div>';
+      return;
+    }
+    var rolLbl=function(r){return r==='gerencial'?'Gerencial':(r==='proceso'?'Jefa de Proceso':(r==='director'?'Director':'Operativo'));};
+    cont.innerHTML='<div class="res-especie-title"><span class="res-especie-emoji">🟢</span><span class="res-especie-nombre">Conectados ahora ('+activos.length+')</span></div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:8px">'
+      +activos.map(function(r){
+        var mins=Math.round((ahora-(r.ultimaActividad||0))/60000);
+        return '<div style="background:#f0f8f0;border:1px solid #d0e8d0;border-radius:20px;padding:6px 14px;font-size:12px;display:flex;align-items:center;gap:6px">'
+          +'<span style="width:8px;height:8px;border-radius:50%;background:#2ecc71;display:inline-block"></span>'
+          +'<b>'+r.usuario+'</b><span style="color:#888"> · '+rolLbl(r.rol)+' · hace '+(mins<1?'<1':mins)+' min</span></div>';
+      }).join('')
+      +'</div>';
+  }catch(e){cont.style.display='block';cont.innerHTML='<div style="font-size:12px;color:#c0392b">No se pudo cargar el estado de conexión.</div>';}
+}
 function resumenRegistro(data){
   if(!data) return '(sin datos)';
   var candidatos=['nombre','proveedor','cliente','especie','tipo','agroquimico','rut'];
@@ -4943,6 +4985,7 @@ function activarSesion(u,ud){
   window._esAdmin = !!ud.admin;
   window._vistaProceso = (ud.rol === 'proceso');
   window._usuarioActual = ud.nombre;
+  iniciarPresencia();
   document.getElementById('tb-username').textContent=ud.nombre;
  document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':(ud.rol==='proceso'?'Jefa de Proceso':(ud.rol==='director'?'Director':'Operativo'));
   if(ud.rol==='gerencial') document.getElementById('tab-precio').classList.remove('hidden-tab');
@@ -4994,6 +5037,10 @@ function activarSesion(u,ud){
 window._activarSesion = activarSesion;
 window.doLogout=function(){
   window._pendingAutoLogin=false;
+  if(window._presenciaInterval){clearInterval(window._presenciaInterval);window._presenciaInterval=null;}
+  if(window._usuarioActual && window._fbReady){
+    try{ window._deleteDoc(window._doc(window._db,'sesiones','ses-'+slugUsuario(window._usuarioActual))); }catch(e){}
+  }
   if(window._auth && window._signOut){ window._signOut(window._auth); }
   document.getElementById('portal').style.display='flex';
   document.getElementById('app').style.display='none';
@@ -6760,6 +6807,7 @@ function initResumen(){
   const mm = String(ayer.getMonth()+1).padStart(2,'0');
   document.getElementById('res-fecha-input').value = ayer.getFullYear()+'-'+mm+'-'+dd;
   renderResumen();
+  renderUsuariosOnline();
 }
 
 window.renderResumen = function(){
