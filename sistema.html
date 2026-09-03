@@ -150,6 +150,8 @@ tr:hover td{background:#f8fcf8}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qr-creator/1.0.0/qr-creator.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -605,6 +607,11 @@ tr:hover td{background:#f8fcf8}
           <div class="form-group"><label>N° Guía Despacho</label><input type="text" id="r-guia" placeholder="GD-0001"></div>
           <div class="form-group"><label>Kg Brutos Recibidos</label><input type="number" id="r-kg" placeholder="0.0" step="0.1" oninput="calcularDestareRecepcion()"></div>
           <div class="form-group"><label>Kg Netos Recibidos</label><input type="number" id="r-kg-neto" placeholder="0.0" step="0.1"></div>
+          <div class="form-group"><label>Valor x Kg ($)</label><input type="number" id="r-valor-kg" placeholder="0.0" step="1" min="0"></div>
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;padding-top:22px">
+            <input type="checkbox" id="r-aplica-iva" style="width:16px;height:16px">
+            <label for="r-aplica-iva" style="margin:0">Aplica IVA (19%)</label>
+          </div>
           <div class="form-group">
             <label>Estado Agrícola</label>
             <select id="r-estado-agricola">
@@ -703,7 +710,7 @@ tr:hover td{background:#f8fcf8}
           <button class="btn btn-export" onclick="exportarExcel(&#39;recepciones&#39;,&#39;tbl-rec&#39;)"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         </div>
         <div class="tbl-wrap"><table id="tbl-rec">
-          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Calidad</th><th>Kg Brutos</th><th>Kg Netos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Calidad</th><th>Kg Brutos</th><th>Kg Netos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th>Env. Ingr.</th><th>Env. Dev.</th><th>Saldo Env.</th><th>Deudor</th><th></th></tr></thead>
           <tbody id="tbody-rec">
     <tr>
       <td>09/06/2026</td><td>matias abdala</td><td>Arándano</td>
@@ -5054,6 +5061,8 @@ window.saveRecepcion=function(){
     guia:document.getElementById('r-guia').value,
     kg:parseFloat(document.getElementById('r-kg').value)||0,
     kgNeto:parseFloat(document.getElementById('r-kg-neto').value)||0,
+    valorKg:parseFloat(document.getElementById('r-valor-kg').value)||0,
+    aplicaIva:document.getElementById('r-aplica-iva').checked,
     estadoAgricola:document.getElementById('r-estado-agricola').value,
     variedad:document.getElementById('r-variedad').value.trim(),
     conservacion:document.getElementById('r-conservacion').value,
@@ -5078,7 +5087,8 @@ window.saveRecepcion=function(){
   showStatus('Recepción guardada ✓');
 }
 window.limpiarRecepcion=function(){
-  ['r-prov','r-rut','r-guia','r-kg','r-kg-neto','r-variedad','r-campo','r-obs','r-envase','r-bandejas','r-sag-prod','r-responsable','r-destare-bandeja','r-pallets','r-destare-pallet'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['r-prov','r-rut','r-guia','r-kg','r-kg-neto','r-valor-kg','r-variedad','r-campo','r-obs','r-envase','r-bandejas','r-sag-prod','r-responsable','r-destare-bandeja','r-pallets','r-destare-pallet'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  var elIva=document.getElementById('r-aplica-iva');if(elIva)elIva.checked=false;
   var elDestareTotal=document.getElementById('r-destare-total');if(elDestareTotal)elDestareTotal.value='';
   var elEstadoAgro=document.getElementById('r-estado-agricola');if(elEstadoAgro)elEstadoAgro.value='';
   var elConserv=document.getElementById('r-conservacion');if(elConserv)elConserv.value='';
@@ -5111,15 +5121,113 @@ window.renderRecepcionHist=function(){
     }
     return true;
   });
-  document.getElementById('tbody-rec').innerHTML=fil.map(r=>`
+  var saldoMap=calcSaldoEnvasesRaw('');
+  document.getElementById('tbody-rec').innerHTML=fil.map(r=>{
+    var kSal=r.proveedor+'|'+r.especie+'|'+(r.envase||'-');
+    var s=saldoMap[kSal]||{ing:0,dev:0};
+    var sal=s.ing-s.dev;
+    var deudorTxt=sal>0?'MAFLES debe al productor':sal<0?'Productor debe a MAFLES':'✓ Saldado';
+    var colorSal=sal>0?'#c0392b':sal<0?'#e67e22':'#27ae60';
+    return `
     <tr>
       <td>${fmtFecha(r.fecha)}</td><td>${r.proveedor}</td><td>${r.especie}</td>
       <td style="font-size:11px;color:#555">${[r.estadoAgricola,r.variedad,r.conservacion].filter(Boolean).join(' · ')||'-'}</td>
       <td>${fmtNum(r.kg)} kg</td><td>${fmtNum(r.kgNeto)} kg</td><td>${r.bandejas||0}</td><td>${r.guia||'-'}</td>
       <td><span class="badge badge-green">${r.estado||'Recibido'}</span></td>
       <td style="font-size:11px;color:#888">${r.creadoPor||'-'}</td>
-      <td><button class="btn btn-danger" style="height:30px;font-size:15px;padding:0 10px;min-width:36px" onclick="delRec('${r.id}')">🗑️</button></td>
-    </tr>`).join('')||'<tr><td colspan="10" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
+      <td>${fmtNum(s.ing)}</td><td>${fmtNum(s.dev)}</td>
+      <td style="font-weight:700;color:${colorSal}">${fmtNum(sal)}</td>
+      <td style="font-size:11px;font-weight:600;color:${colorSal}">${deudorTxt}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary" style="height:30px;font-size:11px;padding:0 8px;margin-right:4px" onclick="generarConstanciaRecepcion('${r.id}')"><i class="ti ti-file-download"></i> Constancia</button>
+        <button class="btn btn-danger" style="height:30px;font-size:15px;padding:0 10px;min-width:36px" onclick="delRec('${r.id}')">🗑️</button>
+      </td>
+    </tr>`;}).join('')||'<tr><td colspan="14" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
+}
+
+// ===== CONSTANCIA DE RECEPCIÓN (PDF) =====
+window.generarConstanciaRecepcion=function(id){
+  const r=DATA.recepciones.find(x=>x.id===id);
+  if(!r){alert('No se encontró la recepción.');return}
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  const verde=[26,74,46];
+  const nCorr=String(r.correlativo||0).padStart(4,'0');
+
+  const saldoMap=calcSaldoEnvasesRaw('');
+  const kSal=r.proveedor+'|'+r.especie+'|'+(r.envase||'-');
+  const s=saldoMap[kSal]||{ing:0,dev:0};
+  const sal=s.ing-s.dev;
+  const deudorTxt=sal>0?'MAFLES debe al productor':sal<0?'Productor debe a MAFLES':'Saldado';
+
+  pdf.setFontSize(15);
+  pdf.setTextColor(verde[0],verde[1],verde[2]);
+  pdf.text('Constancia de Recepción — MAFLES', 14, 16);
+  pdf.setFontSize(10);
+  pdf.setTextColor(90,90,90);
+  pdf.text('Compra N° '+nCorr, 14, 23);
+
+  pdf.autoTable({
+    startY: 28,
+    theme: 'plain',
+    styles:{fontSize:9,cellPadding:1.5},
+    body: [
+      ['RUT', r.rut||'-', 'Productor', r.proveedor||'-'],
+      ['Fecha ingreso', fmtFecha(r.fecha), 'Guía proveedor', r.guia||'-'],
+      ['Especie', r.especie||'-', 'Zona de Recolección', r.campo_cuartel||'-'],
+      ['Estado Agrícola', r.estadoAgricola||'-', 'Conservación', r.conservacion||'-'],
+    ],
+    columnStyles:{0:{fontStyle:'bold',cellWidth:38},2:{fontStyle:'bold',cellWidth:38}}
+  });
+
+  let y = pdf.lastAutoTable.finalY + 6;
+  pdf.setFontSize(11);
+  pdf.setTextColor(verde[0],verde[1],verde[2]);
+  pdf.text('Detalle Pesaje Recepción', 14, y);
+  pdf.autoTable({
+    startY: y+3,
+    head:[['Bandeja','Cant. Bandejas','Kg Brutos','Destare Total','Kg Netos']],
+    body:[[r.envase||'-', r.bandejas||0, fmtNum(r.kg)+' kg', fmtNum(r.destareTotal||0)+' kg', fmtNum(r.kgNeto)+' kg']],
+    headStyles:{fillColor:verde,textColor:255,fontSize:9},
+    styles:{fontSize:9}
+  });
+
+  y = pdf.lastAutoTable.finalY + 8;
+  pdf.setFontSize(11);
+  pdf.setTextColor(verde[0],verde[1],verde[2]);
+  pdf.text('Detalle Kilos a Pago', 14, y);
+  const valorKg=r.valorKg||0;
+  const neto=(r.kgNeto||0)*valorKg;
+  const iva=r.aplicaIva?neto*0.19:0;
+  const subtotal=neto+iva;
+  const mp=[r.especie,r.estadoAgricola,r.variedad,r.conservacion].filter(Boolean).join(' · ');
+  pdf.autoTable({
+    startY: y+3,
+    head:[['MP','Valor x Kg','Kilos Netos','Neto','IVA','Subtotal']],
+    body:[[mp||'-', '$'+fmtNum(valorKg), fmtNum(r.kgNeto)+' kg', '$'+fmtNum(neto), '$'+fmtNum(iva), '$'+fmtNum(subtotal)]],
+    headStyles:{fillColor:verde,textColor:255,fontSize:8},
+    styles:{fontSize:8}
+  });
+
+  y = pdf.lastAutoTable.finalY + 8;
+  pdf.setFontSize(11);
+  pdf.setTextColor(verde[0],verde[1],verde[2]);
+  pdf.text('Movimiento de Bandejas / Envases', 14, y);
+  pdf.autoTable({
+    startY: y+3,
+    head:[['Tipo Envase','Ingresadas','Devueltas','Saldo','Deudor']],
+    body:[[r.envase||'-', fmtNum(s.ing), fmtNum(s.dev), fmtNum(sal), deudorTxt]],
+    headStyles:{fillColor:verde,textColor:255,fontSize:9},
+    styles:{fontSize:9}
+  });
+
+  y = pdf.lastAutoTable.finalY + 8;
+  pdf.setFontSize(9);
+  pdf.setTextColor(90,90,90);
+  if(r.obs){ pdf.text('Observaciones: '+r.obs, 14, y); y+=6; }
+  pdf.text('Digitador: '+(r.creadoPor||'-'), 14, y);
+
+  pdf.save('Constancia-TRZ-'+nCorr+'.pdf');
 }
 window.delRecEnv=async function(id){
   if(!confirm('¿Eliminar este ingreso de envases?'))return;
@@ -5271,10 +5379,7 @@ window.delDev=async function(id){
   if(d?._fid) await fbDel('devoluciones',d._fid,d);
   DATA.devoluciones=DATA.devoluciones.filter(x=>x.id!==id);renderDevHist();
 }
-window.renderSaldo=function(){
-  var provFil=(document.getElementById('fil-sal-prov')?.value||'').toLowerCase();
-  var espFil=document.getElementById('fil-sal-esp')?.value||'';
-  var periodoSal=document.getElementById('fil-sal-periodo')?.value||'';
+function calcSaldoEnvasesRaw(periodoSal){
   var hoyS=new Date();hoyS.setHours(0,0,0,0);
   var saldo={};
   // Acumular ingresos desde recepciones
@@ -5305,6 +5410,13 @@ window.renderSaldo=function(){
       }
     });
   });
+  return saldo;
+}
+window.renderSaldo=function(){
+  var provFil=(document.getElementById('fil-sal-prov')?.value||'').toLowerCase();
+  var espFil=document.getElementById('fil-sal-esp')?.value||'';
+  var periodoSal=document.getElementById('fil-sal-periodo')?.value||'';
+  var saldo=calcSaldoEnvasesRaw(periodoSal);
   var rows=Object.values(saldo).filter(function(s){
     if(provFil&&!s.prov.toLowerCase().includes(provFil))return false;
     if(espFil&&s.esp!==espFil)return false;
