@@ -975,6 +975,9 @@ tr:hover td{background:#f8fcf8}
             </select>
             <button class="btn btn-secondary" style="height:32px;font-size:12px" onclick="renderSaldo()"><i class="ti ti-search"></i> Buscar</button>
             <button class="btn btn-export" onclick="exportarExcel(&#39;saldo&#39;,&#39;tbl-saldo&#39;)"><i class="ti ti-file-spreadsheet"></i> Excel</button>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a4a2e;margin-left:8px">
+              <input type="checkbox" id="fil-sal-ocultar-saldados" checked onchange="renderSaldo()"> Ocultar saldados (✓ $0)
+            </label>
           </div>
           <div class="tbl-wrap"><table id="tbl-saldo">
             <thead><tr><th>Proveedor</th><th>RUT</th><th>Especie</th><th>Tipo Envase</th><th>Ingresadas</th><th>Devueltas</th><th>Saldo</th><th>Deudor</th></tr></thead>
@@ -5427,14 +5430,16 @@ window.renderSaldo=function(){
   var provFil=(document.getElementById('fil-sal-prov')?.value||'').toLowerCase();
   var espFil=document.getElementById('fil-sal-esp')?.value||'';
   var periodoSal=document.getElementById('fil-sal-periodo')?.value||'';
+  var ocultarSaldados=document.getElementById('fil-sal-ocultar-saldados')?.checked!==false;
   var saldo=calcSaldoEnvasesRaw(periodoSal);
   var rows=Object.values(saldo).filter(function(s){
     if(provFil&&!s.prov.toLowerCase().includes(provFil))return false;
     if(espFil&&s.esp!==espFil)return false;
+    if(ocultarSaldados&&(s.ing-s.dev)===0)return false;
     return true;
   });
   if(!rows.length){
-    document.getElementById('tbody-saldo').innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
+    document.getElementById('tbody-saldo').innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:1rem">'+(ocultarSaldados?'Sin saldos pendientes (las cuentas saldadas están ocultas)':'Sin registros')+'</td></tr>';
     return;
   }
   document.getElementById('tbody-saldo').innerHTML=rows.map(function(s){
