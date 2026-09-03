@@ -856,7 +856,10 @@ tr:hover td{background:#f8fcf8}
         <div class="card">
           <div class="card-title"><i class="ti ti-package"></i> Ingresos de Envases (desde Recepción)</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <input type="text" id="fil-env-ing-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
+            <div style="position:relative">
+            <input type="text" id="fil-env-ing-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px" oninput="buscaProv('fil-env-ing-prov','drop-prov-enving')" autocomplete="off">
+            <div class="agro-dropdown" id="drop-prov-enving"></div>
+            </div>
             <select id="fil-env-ing-esp" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
               <option value="">Todas las especies</option>
               <option>Espárrago</option><option>Arándano</option><option>Mora</option>
@@ -951,7 +954,10 @@ tr:hover td{background:#f8fcf8}
         <div class="card">
           <div class="card-title"><i class="ti ti-scale"></i> Saldo de Envases por Productor</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <input type="text" id="fil-sal-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
+            <div style="position:relative">
+            <input type="text" id="fil-sal-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px" oninput="buscaProv('fil-sal-prov','drop-prov-sal')" autocomplete="off">
+            <div class="agro-dropdown" id="drop-prov-sal"></div>
+            </div>
             <select id="fil-sal-esp" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
               <option value="">Todas las especies</option>
               <option>Espárrago</option><option>Arándano</option><option>Mora</option>
@@ -3981,15 +3987,16 @@ const AGROS = [
 
   // ========== BASF ==========
 
-  // Bellis: SAG 2543
+  // Bellis: SAG 2543. NOTA: SANCO (exigencia comercial, no ley SAG) pide 5 días en Frambuesa vs manual 2026-2027 — se mantiene el valor legal SAG
   {nombre:'Bellis',pa:'Boscalid + Piraclostrobina',sag:'2543',tipo:'Fungicida',fabricante:'BASF',
    cultivos:'Arándano, Mora, Frambuesa, Frutilla, Uva, Cereza',
-   carencias:{'Arándano':0,'Mora':0,'Frambuesa':0,'Frutilla':0,'Uva':2,'Cereza':0},carencia:0},
+   carencias:{'Arándano':0,'Mora':0,'Frambuesa':0,'Frutilla':0,'Uva':2,'Cereza':0},carencia:0,
+   notaCliente:'SANCO exige 5 días en Frambuesa (exigencia comercial, no legal SAG)'},
 
-  // Cantus: SAG 2462, solo arándano 0d
+  // Cantus: SAG 2462. Agregada Frambuesa (manual SANCO 2026-2027) además de Arándano
   {nombre:'Cantus',pa:'Boscalid',sag:'2462',tipo:'Fungicida',fabricante:'BASF',
-   cultivos:'Arándano',
-   carencias:{'Arándano':0},carencia:0},
+   cultivos:'Arándano, Frambuesa',
+   carencias:{'Arándano':0,'Frambuesa':5},carencia:0},
 
   // Polyram DF: espárrago N/A (0d), uva 60d
   {nombre:'Polyram DF',pa:'Metiram',sag:'2052',tipo:'Fungicida',fabricante:'BASF',
@@ -4015,10 +4022,11 @@ const AGROS = [
    cultivos:'Arándano, Mora, Frambuesa, Frutilla, Uva, Cereza',
    carencias:{'Arándano':3,'Mora':3,'Frambuesa':3,'Frutilla':3,'Uva':7,'Cereza':3},carencia:3},
 
-  // Exirel: SAG 1841, uva 3d
+  // Exirel: SAG 1841, uva 3d. NOTA: SANCO (exigencia comercial) pide 3 días en Mora/Frambuesa vs manual 2026-2027 — se mantiene el valor legal SAG
   {nombre:'Exirel',pa:'Ciantraniliprol',sag:'1841',tipo:'Insecticida',fabricante:'Corteva',
    cultivos:'Espárrago, Arándano, Mora, Frambuesa, Frutilla, Uva, Cereza',
-   carencias:{'Espárrago':1,'Arándano':1,'Mora':1,'Frambuesa':1,'Frutilla':1,'Uva':3,'Cereza':1},carencia:1},
+   carencias:{'Espárrago':1,'Arándano':1,'Mora':1,'Frambuesa':1,'Frutilla':1,'Uva':3,'Cereza':1},carencia:1,
+   notaCliente:'SANCO exige 3 días en Mora y Frambuesa (exigencia comercial, no legal SAG)'},
 
   // ========== FMC ==========
 
@@ -4054,7 +4062,413 @@ const AGROS = [
   // Caldera 250 EC: SAG 2744
   {nombre:'Caldera 250 EC',pa:'Difenoconazol',sag:'2744',tipo:'Fungicida',fabricante:'UPL',
    cultivos:'Espárrago, Arándano, Mora, Frambuesa, Frutilla',
-   carencias:{'Espárrago':21,'Arándano':14,'Mora':14,'Frambuesa':14,'Frutilla':14},carencia:14}
+   carencias:{'Espárrago':21,'Arándano':14,'Mora':14,'Frambuesa':14,'Frutilla':14},carencia:14},
+
+  // ========== NUEVOS: Frambuesa/Mora (Manual SANCO Temporada 2026-2027, N° SAG y fabricante verificados contra Registro Oficial SAG resumen 01-10-2025) ==========
+
+  {nombre:'Timorex Gol',pa:'Aceite De Árbol De Té - Melaleuca Alternifolia (Terpinen-4-Ol / Γ-Terpineno)',sag:'2781',tipo:'Fungicida',fabricante:'Stockton Chile Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Azoxystrobin 250 SC',pa:'Azoxistrobina',sag:'2982',tipo:'Fungicida',fabricante:'Solchem Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':5},carencia:3},
+
+  {nombre:'Esquinazo 250 SC',pa:'Azoxistrobina',sag:'2947',tipo:'Fungicida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':5},carencia:3},
+
+  {nombre:'Impulso 25 SC',pa:'Azoxistrobina',sag:'2783',tipo:'Fungicida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':5},carencia:3},
+
+  {nombre:'Quadris',pa:'Azoxistrobina',sag:'2437',tipo:'Fungicida',fabricante:'Syngenta S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':5},carencia:3},
+
+  {nombre:'Azufre Floable An 600',pa:'Azufre',sag:'2225',tipo:'Fungicida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Sulfur 80 WP / WG',pa:'Azufre',sag:'2721-O',tipo:'Fungicida',fabricante:'Agrospec S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Puelche WP',pa:'Bacillus Licheniformis Cepa Copihue/ Hypocrea Virens Cepa Ñire',sag:'2978-O',tipo:'Fungicida',fabricante:'Bio Insumos Nativa Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Serenade ASO',pa:'Bacillus Subtilis Cepa Qst 713',sag:'2421-O',tipo:'Fungicida',fabricante:'Bayer S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Babilu',pa:'Bacillus Subtilis Y1336',sag:'20006-O',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Banko',pa:'Boscalid',sag:'2879',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':5},carencia:5},
+
+  {nombre:'Boscalid 50% WG',pa:'Boscalid',sag:'20008',tipo:'Fungicida',fabricante:'Agrospec S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':5},carencia:5},
+
+  {nombre:'Tronor',pa:'Boscalid',sag:'2919',tipo:'Fungicida',fabricante:'Basf Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':5},carencia:5},
+
+  {nombre:'Veldep',pa:'Boscalid / Piraclostrobina',sag:'2895',tipo:'Fungicida',fabricante:'Basf Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':5},carencia:5},
+
+  {nombre:'Captan 80 WG',pa:'Captán',sag:'2041',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':12},carencia:12},
+
+  {nombre:'Captan 83 WP',pa:'Captán',sag:'2014',tipo:'Fungicida',fabricante:'Makhteshim Agan Chile Spa',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':12},carencia:12},
+
+  {nombre:'Captan Gold 80WG',pa:'Captán',sag:'2475',tipo:'Fungicida',fabricante:'Makhteshim Agan Chile Spa',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':12},carencia:12},
+
+  {nombre:'Captan Prime 80WG',pa:'Captán',sag:'20017',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':12},carencia:12},
+
+  {nombre:'Orthocide',pa:'Captán',sag:'2568',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':12},carencia:12},
+
+  {nombre:'Vangard 50 WG',pa:'Ciprodinilo',sag:'2351',tipo:'Fungicida',fabricante:'Syngenta S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':7,'Mora':3},carencia:3},
+
+  {nombre:'Bigdeal',pa:'Ciprodinilo / Fludioxonilo',sag:'20013',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':7,'Mora':3},carencia:3},
+
+  {nombre:'Switch 62,5 WG',pa:'Ciprodinilo / Fludioxonilo',sag:'2357',tipo:'Fungicida',fabricante:'Syngenta S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':7,'Mora':3},carencia:3},
+
+  {nombre:'Shelter 62.5 WG',pa:'Ciprodinilo / Fludioxonilo',sag:'20032',tipo:'Fungicida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':7,'Mora':3},carencia:3},
+
+  {nombre:'BC-1000 Liquido',pa:'Extracto De Toronja - Citrus X Paradisi (Ácido L-Ascórbico)',sag:'2262-O',tipo:'Fungicida',fabricante:'Chemie S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Bestcure',pa:'Extracto De Frutos Citrus Aurantium L',sag:'2986-O',tipo:'Fungicida',fabricante:'Bioamerica S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Citrus SL',pa:'Extracto De Cítrico (Ácido L-Ascórbico)',sag:'2759-O',tipo:'Fungicida',fabricante:'Agrospec S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Lonlife Liquido',pa:'Extracto De Cítrico Extracto De Limón - Citrus Limon + Extracto De Piña - Ananas Comosus (Ácido L-Ascórbico / Ácido Cítrico / Ácido L-Láctico)',sag:'2332',tipo:'Fungicida',fabricante:'Citrex Chile Spa',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Pangermex',pa:'Extracto De Naranja - Citrus Sinensis',sag:'2504',tipo:'Fungicida',fabricante:'Cordova & Edwars Do Brasil Ltda.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Status SL',pa:'Extracto De Toronja - Citrus X Paradisi (Ácido L-Ascórbico / Ácido Cítrico / Ácido L-Láctico)',sag:'2492',tipo:'Fungicida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Botristop',pa:'Extracto De Quillay - Quillaja Saponaria (Saponinas Del Quillay / Ácido Salicílico / Escopoletina /Ácido Clorogénico)',sag:'2868-O',tipo:'Fungicida',fabricante:'Botanical Solutions Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Ecoswing',pa:'Extracto De Swinglea Glutinosa',sag:'2920-O',tipo:'Fungicida',fabricante:'Gowan Chile Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Teldor 50 WP',pa:'Fenhexamida',sag:'2427',tipo:'Fungicida',fabricante:'Bayer S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':2},carencia:2},
+
+  {nombre:'Altivo 500 SC',pa:'Fenhexamida',sag:'2865',tipo:'Fungicida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':2},carencia:2},
+
+  {nombre:'Telexamid',pa:'Fenhexamida',sag:'2894',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':2},carencia:2},
+
+  {nombre:'Luna Tranquility',pa:'Fluopiram / Pirimetanilo',sag:'2880',tipo:'Fungicida',fabricante:'Bayer S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':1,'Mora':1},carencia:1},
+
+  {nombre:'Kaligreen Top',pa:'Hidrogenocarbonato De Potasio',sag:'2698-O',tipo:'Fungicida',fabricante:'Summit Agro Chile Spa.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':1},carencia:1},
+
+  {nombre:'Tecsa Pro Plus',pa:'Hipoclorito De Sodio / Clorito De Sodio',sag:'2733',tipo:'Fungicida',fabricante:'Productos Técnicos Protecsa S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':1},carencia:1},
+
+  {nombre:'Champ Dp',pa:'Hidróxido De Cobre',sag:'2490-O',tipo:'Fungicida',fabricante:'Sumitomo Chemical Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Champion WP',pa:'Hidróxido De Cobre',sag:'2635',tipo:'Fungicida',fabricante:'Sumitomo Chemical Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Hidro-cup WG',pa:'Hidróxido De Cobre',sag:'2559-O',tipo:'Fungicida',fabricante:'Quimetal Industrial S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Hidro Cobre Premium',pa:'Hidróxido De Cobre',sag:'2864-O',tipo:'Fungicida',fabricante:'Quimetal Industrial S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Hidroxicobre Flo',pa:'Hidróxido De Cobre',sag:'2849',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Hidroxicobre 50% WG',pa:'Hidróxido De Cobre',sag:'2848-O',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Kocide 2000',pa:'Hidróxido De Cobre',sag:'2717',tipo:'Fungicida',fabricante:'Mitsui & Co. (Chile) Ltda.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Tazer Flo',pa:'Hidróxido De Cobre',sag:'2790',tipo:'Fungicida',fabricante:'Sumitomo Chemical Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Cuprodul WG',pa:'Óxido Cuproso',sag:'2185-O',tipo:'Fungicida',fabricante:'Quimetal Industrial S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Nordox Super 75 WG',pa:'Óxido Cuproso',sag:'2470-O',tipo:'Fungicida',fabricante:'Magan Chile Ltda.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Cobre Premium',pa:'Óxido Cuproso',sag:'2560-O',tipo:'Fungicida',fabricante:'Syngenta S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Cuproso Flo',pa:'Óxido Cuproso',sag:'2863-O',tipo:'Fungicida',fabricante:'Quimetal Industrial S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Cuproso 50% WG',pa:'Óxido Cuproso',sag:'2551-O',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Cuproso 75% WG',pa:'Óxido Cuproso',sag:'2779',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Pyrus 400 SC',pa:'Pirimetanilo',sag:'2841',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':5},carencia:5},
+
+  {nombre:'Agrocopper SP',pa:'Sulfato De Cobre Pentahidratado',sag:'2833-O',tipo:'Fungicida',fabricante:'Coppermind Spa.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Biocopper 56',pa:'Sulfato De Cobre Pentahidratado',sag:'2660',tipo:'Fungicida',fabricante:'Adama Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Cobre SL Agrospec',pa:'Sulfato De Cobre Pentahidratado',sag:'2788',tipo:'Fungicida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Mastercop',pa:'Sulfato De Cobre Pentahidratado',sag:'2545-O',tipo:'Fungicida',fabricante:'Bioamerica S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'PHYTON-27',pa:'Sulfato De Cobre Pentahidratado',sag:'2322-O',tipo:'Fungicida',fabricante:'Marketing Arm International Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Binab-t WP',pa:'Trichoderma Harzianum (Imi 206040) / Trichoderma Polysporum (Imi 206039)',sag:'2102',tipo:'Fungicida',fabricante:'Agroconnexion Spa',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Harztop',pa:'Trichoderma Harzianum Rifai Cepa T22',sag:'2738',tipo:'Fungicida',fabricante:'Biogram S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Tifi Polvo',pa:'Trichoderma Atroviride Cepa Mucl45632',sag:'2708-O',tipo:'Fungicida',fabricante:'Bioquímica De Productos Naturales Ltda.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Trichoderama Susp.',pa:'Trichoderma Harzianum Cepa T3 Los Robles',sag:'2719-O',tipo:'Fungicida',fabricante:'Instituto Tecnologico Para La Agricultura Sustentable, Itas S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Trichonativa',pa:'Trichoderma Harzianum Cepa Queule / Trichoderma Virens Cepa Sherwood / Trichoderma Parceramosum Cepa Trailes',sag:'2587-O',tipo:'Fungicida',fabricante:'Bio Insumos Nativa Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Triwork',pa:'Trichoderma Viride Cepa T-26 / Trichoderma Harzianum Cepa T-22 / Trichoderma Longibrachiatum Cepa T-397',sag:'2602',tipo:'Fungicida',fabricante:'Gastón Andrés Toledo Aniñir',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Abamax 1,8% EC',pa:'Abamectina',sag:'1763',tipo:'Insecticida/Acaricida',fabricante:'Point Industrial Y Comercial Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Abamectin 1,8 EC',pa:'Abamectina',sag:'1754',tipo:'Insecticida/Acaricida',fabricante:'Agrospec S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Abamite 1,8% EC',pa:'Abamectina',sag:'1749',tipo:'Insecticida/Acaricida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Fast 1.8 EC',pa:'Abamectina',sag:'1509',tipo:'Insecticida/Acaricida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Fast Plus',pa:'Abamectina',sag:'1747',tipo:'Insecticida/Acaricida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Grimectin',pa:'Abamectina',sag:'1737',tipo:'Insecticida/Acaricida',fabricante:'Albaugh Chile Agroquímica Limitada',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Numek',pa:'Abamectina',sag:'1667',tipo:'Insecticida/Acaricida',fabricante:'Sumitomo Chemical Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Romectin 1,8% EC',pa:'Abamectina',sag:'1691',tipo:'Insecticida/Acaricida',fabricante:'Albaugh Chile Agroquímica Limitada',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Vertimec 018 EC',pa:'Abamectina',sag:'1525',tipo:'Insecticida/Acaricida',fabricante:'Syngenta S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':5},carencia:5},
+
+  {nombre:'Bioil Spray',pa:'Aceite De Linaza - Linum Usitatissimum (Triacilgliceroles)',sag:'1785',tipo:'Insecticida/Acaricida',fabricante:'Dropco S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Acarospray Coa',pa:'Aceite Parafínico',sag:'1861',tipo:'Insecticida/Acaricida',fabricante:'Ypf Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Argenfrut Supreme',pa:'Aceite Parafínico',sag:'1743-O',tipo:'Insecticida/Acaricida',fabricante:'Albaugh Chile Agroquímica Limitada',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Ultraspray',pa:'Aceite Parafínico',sag:'1630',tipo:'Insecticida/Acaricida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Winspray',pa:'Aceite Parafínico',sag:'1768',tipo:'Insecticida/Acaricida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Acetamiprid 20% SP',pa:'Acetamiprid',sag:'1873',tipo:'Insecticida/Acaricida',fabricante:'Agrospec S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':3},carencia:3},
+
+  {nombre:'Acetamiprid 70% WP',pa:'Acetamiprid',sag:'1835',tipo:'Insecticida/Acaricida',fabricante:'Newpat Chemicals Spa',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':3},carencia:3},
+
+  {nombre:'Overkill',pa:'Acetamiprid',sag:'1820',tipo:'Insecticida/Acaricida',fabricante:'Agrospec S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':3},carencia:3},
+
+  {nombre:'Predator',pa:'Acetamiprid',sag:'1838',tipo:'Insecticida/Acaricida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':3},carencia:3},
+
+  {nombre:'Quilate 700 WP',pa:'Acetamiprid',sag:'1852',tipo:'Insecticida/Acaricida',fabricante:'Point Industrial Y Comercial Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':3,'Mora':3},carencia:3},
+
+  {nombre:'Neem-x',pa:'Azadiractina',sag:'1603-O',tipo:'Insecticida/Acaricida',fabricante:'Marketing Arm International Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':1},carencia:0},
+
+  {nombre:'Delfin WG',pa:'Bacillus Thuringiensis Subsp Kurstaki Serotipo 3A, 3B, Cepa Sa-11',sag:'1862-O',tipo:'Insecticida/Acaricida',fabricante:'Ap Consulting Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Dipel WG',pa:'Bacillus Thuringiensis Subsp Kurstaki (Cepa: Abts-351)',sag:'1221-O',tipo:'Insecticida/Acaricida',fabricante:'Sumitomo Chemical Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Javelin WG',pa:'Bacillus Thuringiensis Subsp Kurstaki',sag:'1394-O',tipo:'Insecticida/Acaricida',fabricante:'Ap Consulting Spa',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Bifentrin 100 EC',pa:'Bifentrina',sag:'1834',tipo:'Insecticida/Acaricida',fabricante:'Newpat Chemicals Spa',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':7},carencia:7},
+
+  {nombre:'Talstar 10 EC',pa:'Bifentrina',sag:'1663',tipo:'Insecticida/Acaricida',fabricante:'Fmc Química Chile Ltda.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':7},carencia:7},
+
+  {nombre:'Tripp',pa:'Bifentrina',sag:'1782',tipo:'Insecticida/Acaricida',fabricante:'Upl Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':7},carencia:7},
+
+  {nombre:'Biocap',pa:'Capsaicina',sag:'1765-O',tipo:'Insecticida/Acaricida',fabricante:'Dropco S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Acute',pa:'Capsaicina (En Oleorresina De Capsicum Spp.) / Isotiocianato De Alilo (En Aceite Esencial De Mostaza - Brassica Nigra)',sag:'2843',tipo:'Insecticida/Acaricida',fabricante:'Adama Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Grandevo WG',pa:'Chromobacterium Subtsugae Cepa Praa4-1T',sag:'1897-O',tipo:'Insecticida/Acaricida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Frambuesa',
+   carencias:{'Frambuesa':0},carencia:0},
+
+  {nombre:'Success 48',pa:'Espinosad',sag:'1560',tipo:'Insecticida/Acaricida',fabricante:'Agro Corteva Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':8},carencia:5},
+
+  {nombre:'Entrust',pa:'Espinosad',sag:'1706-O',tipo:'Insecticida/Acaricida',fabricante:'Agro Corteva Chile S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':5,'Mora':8},carencia:5},
+
+  {nombre:'Acaban 050 SC',pa:'Fenpiroximato',sag:'1447',tipo:'Insecticida/Acaricida',fabricante:'Syngenta S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':21,'Mora':25},carencia:21},
+
+  {nombre:'Nofly WP',pa:'Paecilomyces Fumosoroseus Cepa Fe 9901',sag:'1891-O',tipo:'Insecticida/Acaricida',fabricante:'Bioamerica S.A.',
+   cultivos:'Frambuesa, Mora',
+   carencias:{'Frambuesa':0,'Mora':0},carencia:0},
+
+  {nombre:'Altivo 50 WP',pa:'Fenhexamida',sag:'2825',tipo:'Fungicida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Mora',
+   carencias:{'Mora':3},carencia:3},
+
+  {nombre:'Teldor 50% WP',pa:'Fenhexamida',sag:'2427',tipo:'Fungicida',fabricante:'Bayer S.A.',
+   cultivos:'Mora',
+   carencias:{'Mora':3},carencia:3},
+
+  {nombre:'Verimark',pa:'Ciantraniliprol',sag:'1865',tipo:'Insecticida/Acaricida',fabricante:'Fmc Química Chile Ltda.',
+   cultivos:'Mora',
+   carencias:{'Mora':3},carencia:3},
+
+  {nombre:'Element',pa:'Espinosad',sag:'1941',tipo:'Insecticida/Acaricida',fabricante:'Agrospec S.A.',
+   cultivos:'Mora',
+   carencias:{'Mora':8},carencia:8},
+
+  {nombre:'Stong 480 SC',pa:'Espinosad',sag:'1926',tipo:'Insecticida/Acaricida',fabricante:'Anasac Chile S.A.',
+   cultivos:'Mora',
+   carencias:{'Mora':8},carencia:8}
 
 ];
 
@@ -4664,6 +5078,8 @@ window.selProv=function(inputId,dropId,prov,rut){
   document.getElementById(inputId).value=prov;
   document.getElementById(dropId).style.display='none';
   doAutofillProv(inputId,prov);
+  if(inputId==='fil-env-ing-prov'&&typeof renderEnvIngresos==='function') renderEnvIngresos();
+  if(inputId==='fil-sal-prov'&&typeof renderSaldo==='function') renderSaldo();
   // Autofill RUT y tipo envase en devoluciones
   if(inputId==='dev-prov'){
     var normProv=function(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();};
