@@ -596,7 +596,7 @@ tr:hover td{background:#f8fcf8}
             <input type="text" id="r-prov" placeholder="Buscar productor..." oninput="buscaProv(&#39;r-prov&#39;,&#39;drop-prov-r&#39;)" autocomplete="off">
             <div class="agro-dropdown" id="drop-prov-r"></div>
           </div>
-          <div class="form-group"><label>RUT Proveedor</label><input type="text" id="r-rut" placeholder="12.345.678-9" maxlength="13"></div>
+          <div class="form-group"><label>RUT Productor</label><input type="text" id="r-rut" placeholder="12.345.678-9" maxlength="13"></div>
           <div class="form-group">
             <label>Especie</label>
             <select id="r-esp" onchange="setEnvaseAuto();toggleSagProd()">
@@ -755,7 +755,7 @@ tr:hover td{background:#f8fcf8}
         <div class="card-title"><i class="ti ti-flask"></i> Registro de Aplicación Agroquímica</div>
         <div class="form-grid">
           <div class="form-group" style="position:relative">
-            <label>Proveedor / Productor</label>
+            <label>Productor</label>
             <input type="text" id="c-prov" placeholder="Buscar productor..." oninput="buscaProv(&#39;c-prov&#39;,&#39;drop-prov-c&#39;)" autocomplete="off">
             <div class="agro-dropdown" id="drop-prov-c"></div>
           </div>
@@ -949,7 +949,7 @@ tr:hover td{background:#f8fcf8}
       <!-- SALDO -->
       <div id="env-saldo" style="display:none">
         <div class="card">
-          <div class="card-title"><i class="ti ti-scale"></i> Saldo de Envases por Proveedor</div>
+          <div class="card-title"><i class="ti ti-scale"></i> Saldo de Envases por Productor</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
             <input type="text" id="fil-sal-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
             <select id="fil-sal-esp" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
@@ -1188,7 +1188,7 @@ tr:hover td{background:#f8fcf8}
         <div class="card">
           <div class="card-title"><i class="ti ti-qrcode"></i> Generador de Trazabilidad QR</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <select id="qr-prov-fil" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:180px"><option value="">Todos los proveedores</option><option>david jara</option><option>diego maradona</option><option>juan sepulveda</option><option>luis miguel diaz</option><option>matias abdala</option></select>
+            <select id="qr-prov-fil" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:180px"><option value="">Todos los productores</option><option>david jara</option><option>diego maradona</option><option>juan sepulveda</option><option>luis miguel diaz</option><option>matias abdala</option></select>
             <select id="qr-esp-fil" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px">
               <option value="">Todas las especies</option>
               <option>Espárrago</option><option>Arándano</option><option>Mora</option>
@@ -1236,7 +1236,7 @@ tr:hover td{background:#f8fcf8}
         <div class="card">
           <div class="card-title"><i class="ti ti-eye"></i> Visor de Trazabilidad — Recepciones con QR generado</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <select id="vis-prov-fil" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:160px"><option value="">Todos los proveedores</option></select>
+            <select id="vis-prov-fil" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:160px"><option value="">Todos los productores</option></select>
             <select id="vis-esp-fil" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px">
               <option value="">Todas las especies</option>
               <option>Espárrago</option><option>Arándano</option><option>Mora</option>
@@ -5534,7 +5534,7 @@ window.calcKpi=function(){
       semMerma.innerHTML='<span style="color:#e65100">⚠️ Aceptable — monitorear</span>';
     } else {
       cardMerma.style.background='#fde8e8';
-      semMerma.innerHTML='<span style="color:#c0392b">🔴 Alerta — revisar proveedor</span>';
+      semMerma.innerHTML='<span style="color:#c0392b">🔴 Alerta — revisar productor</span>';
     }
   } else {
     cardMerma.style.background='';
@@ -5560,7 +5560,7 @@ window.calcKpi=function(){
     reflexiones+='<strong style="color:#1a4a2e">Merma '+merma.toFixed(1)+'%</strong><br>';
     if(merma<=7) reflexiones+='Merma dentro del rango ideal (≤7%). Materia prima de buena calidad. El proceso será rápido y rentable.';
     else if(merma<=10) reflexiones+='Merma aceptable pero sobre el ideal. Monitorear partidas futuras del mismo proveedor.';
-    else reflexiones+='Merma sobre el 10% — alerta de calidad. Revisar el proveedor y las condiciones de cosecha y transporte.';
+    else reflexiones+='Merma sobre el 10% — alerta de calidad. Revisar el productor y las condiciones de cosecha y transporte.';
     reflexiones+='</div>';
 
     // Reflexión Rendimiento individual
@@ -5805,7 +5805,7 @@ window.renderDashboard = function() {
         </div>
 
         <!-- Top 5 Proveedores -->
-        <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:6px">TOP 5 PROVEEDORES</div>
+        <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:6px">TOP 5 PRODUCTORES</div>
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px">
           ${top5.map(([prov, kg], i) => {
             const pct = ((kg/maxKg)*100).toFixed(0);
@@ -6664,7 +6664,7 @@ window.delPrecio=async function(id){
 function poblarQrFiltros(){
   const provs=[...new Set(DATA.recepciones.map(r=>r.proveedor).filter(Boolean))].sort();
   const sel=document.getElementById('qr-prov-fil');
-  sel.innerHTML='<option value="">Todos los proveedores</option>'+provs.map(p=>`<option>${p}</option>`).join('');
+  sel.innerHTML='<option value="">Todos los productores</option>'+provs.map(p=>`<option>${p}</option>`).join('');
 }
 window.renderQrList=function(){
   const prov=document.getElementById('qr-prov-fil')?.value||'';
