@@ -5095,14 +5095,8 @@ window.limpiarRecepcion=function(){
   var grupo=document.getElementById('grupo-sag-prod');if(grupo)grupo.style.display='none';
   document.getElementById('r-esp').value='';
   document.getElementById('r-fecha').value=today();
-
-
-
-// Formato RUT chileno
-
-  return num+fmt+'-'+dv;
-}
   document.getElementById('eval-grid').innerHTML='';
+}
 window.renderRecepcionHist=function(){
   var esp=document.getElementById('fil-r-esp')?.value||'';
   var prov=document.getElementById('fil-r-prov')?.value.toLowerCase()||'';
