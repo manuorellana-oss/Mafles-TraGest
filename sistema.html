@@ -6125,19 +6125,27 @@ window.actualizarContadorSelKpi=function(){
 }
 window.borrarSeleccionadosKpi=async function(){
   var fids=Array.from(document.querySelectorAll('.chk-kpi-row:checked')).map(function(c){return c.value;});
+  console.log('%c[BORRAR KPI] checkboxes marcados, valores:','color:#1a4a2e;font-weight:bold', fids);
   if(!fids.length) return;
   if(!confirm('¿Seguro que quieres eliminar '+fids.length+' registro(s) de KPI seleccionado(s)? Esta acción no se puede deshacer.')) return;
+  console.log('[BORRAR KPI] DATA.kpi.length ANTES:', DATA.kpi.length);
   var exitosos=0;
   for(var i=0;i<fids.length;i++){
     var r=DATA.kpi.find(function(x){return (x._fid||x.id)===fids[i];});
+    console.log('[BORRAR KPI] buscando fid='+fids[i]+' -> encontrado:', r);
     if(!r) continue;
     var ok=await fbDel('kpi',r._fid||r.id,r);
+    console.log('[BORRAR KPI] fbDel resultado para _fid='+(r._fid||r.id)+':', ok);
     if(ok){
+      var antes=DATA.kpi.length;
       DATA.kpi=DATA.kpi.filter(function(x){return x!==r;});
+      console.log('[BORRAR KPI] DATA.kpi.length paso de',antes,'a',DATA.kpi.length);
       exitosos++;
     }
   }
+  console.log('%c[BORRAR KPI] DATA.kpi.length DESPUÉS:','color:#1a4a2e;font-weight:bold', DATA.kpi.length);
   renderKpiHist();
+  console.log('[BORRAR KPI] filas en tabla después de renderKpiHist():', document.querySelectorAll('#tbody-kpi tr').length);
   if(exitosos===fids.length){
     showStatus(exitosos+' KPI eliminado(s) ✓');
   }else if(exitosos===0){
