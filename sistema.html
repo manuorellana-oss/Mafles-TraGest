@@ -6094,7 +6094,7 @@ function renderKpiHist(){
     var rendColor=parseFloat(r.rend)>=90?'badge-green':parseFloat(r.rend)>=80?'badge-amber':'badge-red';
     var mermaColor=parseFloat(r.merma)<=7?'badge-green':parseFloat(r.merma)<=10?'badge-amber':'badge-red';
     return '<tr>'
-      +'<td><input type="checkbox" class="chk-kpi-row" value="'+r.id+'" onchange="actualizarContadorSelKpi()" style="cursor:pointer"></td>'
+      +'<td><input type="checkbox" class="chk-kpi-row" value="'+(r._fid||r.id)+'" onchange="actualizarContadorSelKpi()" style="cursor:pointer"></td>'
       +'<td>'+fmtFecha(r.fecha)+'</td>'
       +'<td>'+r.especie+'</td>'
       +'<td style="font-size:11px;color:#888">'+( r.proceso||'')+'</td>'
@@ -6124,20 +6124,26 @@ window.actualizarContadorSelKpi=function(){
   if(btn) btn.style.display=n>0?'inline-flex':'none';
 }
 window.borrarSeleccionadosKpi=async function(){
-  var ids=Array.from(document.querySelectorAll('.chk-kpi-row:checked')).map(function(c){return c.value;});
-  if(!ids.length) return;
-  if(!confirm('¿Seguro que quieres eliminar '+ids.length+' registro(s) de KPI seleccionado(s)? Esta acción no se puede deshacer.')) return;
+  var fids=Array.from(document.querySelectorAll('.chk-kpi-row:checked')).map(function(c){return c.value;});
+  if(!fids.length) return;
+  if(!confirm('¿Seguro que quieres eliminar '+fids.length+' registro(s) de KPI seleccionado(s)? Esta acción no se puede deshacer.')) return;
   var exitosos=0;
-  for(var i=0;i<ids.length;i++){
-    var fue=await delKpi(ids[i],true);
-    if(fue) exitosos++;
+  for(var i=0;i<fids.length;i++){
+    var r=DATA.kpi.find(function(x){return (x._fid||x.id)===fids[i];});
+    if(!r) continue;
+    var ok=await fbDel('kpi',r._fid||r.id,r);
+    if(ok){
+      DATA.kpi=DATA.kpi.filter(function(x){return x!==r;});
+      exitosos++;
+    }
   }
-  if(exitosos===ids.length){
+  renderKpiHist();
+  if(exitosos===fids.length){
     showStatus(exitosos+' KPI eliminado(s) ✓');
   }else if(exitosos===0){
     showStatus('No se pudo eliminar ninguno (revisa permisos)');
   }else{
-    showStatus(exitosos+' de '+ids.length+' eliminados — el resto falló (revisa permisos)');
+    showStatus(exitosos+' de '+fids.length+' eliminados — el resto falló (revisa permisos)');
   }
 }
 
