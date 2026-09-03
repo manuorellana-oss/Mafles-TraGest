@@ -6106,7 +6106,7 @@ function renderKpiHist(){
       +'<td class="kpi-costo-col">'+r.cmpa+'</td>'
       +'<td class="kpi-costo-col">'+r.cmo+'</td>'
       +'<td class="kpi-costo-col" style="font-weight:700;color:#1a4a2e">'+r.cdu+'</td>'
-      +'<td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delKpi(\''+r.id+'\')">🗑️</button></td>'
+      +'<td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delKpi(\''+(r._fid||r.id)+'\')">🗑️</button></td>'
       +'</tr>';
   }).join('')||'<tr><td colspan="13" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
   var chkAll=document.getElementById('chk-kpi-all'); if(chkAll) chkAll.checked=false;
@@ -6155,13 +6155,13 @@ window.borrarSeleccionadosKpi=async function(){
   }
 }
 
-window.delKpi=async function(id,skipConfirm){
+window.delKpi=async function(fid,skipConfirm){
   if(!skipConfirm && !confirm('¿Eliminar este registro KPI?'))return false;
-  var r=DATA.kpi.find(function(x){return x.id===id;});
-  var ok=true;
-  if(r&&r._fid) ok=await fbDel('kpi',r._fid,r);
+  var r=DATA.kpi.find(function(x){return (x._fid||x.id)===fid;});
+  if(!r) return false;
+  var ok=await fbDel('kpi',r._fid||r.id,r);
   if(!ok) return false;
-  DATA.kpi=DATA.kpi.filter(function(x){return x.id!==id;});
+  DATA.kpi=DATA.kpi.filter(function(x){return x!==r;});
   renderKpiHist();
   if(!skipConfirm) showStatus('KPI eliminado');
   return true;
