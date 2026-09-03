@@ -250,6 +250,9 @@ tr:hover td{background:#f8fcf8}
   <div id="modal-pass-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
     <div style="background:#fff;border-radius:12px;padding:22px;width:340px;max-width:90vw;box-shadow:0 8px 30px rgba(0,0,0,.25)">
       <h3 style="font-size:15px;font-weight:700;color:#1a4a2e;margin-bottom:14px">Cambiar contraseña</h3>
+      <div id="pass-aviso-obligatorio" style="display:none;background:#fff8e1;border:1px solid #f0d878;border-radius:8px;padding:10px;font-size:12px;color:#7a5b00;margin-bottom:14px">Es tu primer ingreso: debes elegir tu propia contraseña antes de continuar.
+        <div style="margin-top:6px"><a href="#" onclick="doLogout();return false;" style="font-size:11px;color:#7a5b00;text-decoration:underline">Cerrar sesión sin cambiar la clave</a></div>
+      </div>
       <div style="margin-bottom:10px">
         <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">Contraseña actual</label>
         <input type="password" id="pass-actual" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
@@ -264,7 +267,7 @@ tr:hover td{background:#f8fcf8}
       </div>
       <div id="pass-msg" style="font-size:12px;color:#c0392b;margin-bottom:10px;display:none"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="btn-logout" style="background:#eee;color:#333" onclick="cerrarModalPass()">Cancelar</button>
+        <button class="btn-logout" id="btn-cancelar-pass" style="background:#eee;color:#333" onclick="cerrarModalPass()">Cancelar</button>
         <button class="btn-logout" style="background:#2e7d52;color:#fff" onclick="confirmarCambioPass()">Guardar</button>
       </div>
     </div>
@@ -4430,14 +4433,18 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function showStatus(txt){const s=document.getElementById('status-bar');document.getElementById('status-txt').textContent=txt;s.classList.add('show');setTimeout(()=>s.classList.remove('show'),2500)}
 
 // ===== CAMBIAR CONTRASEÑA =====
-window.abrirModalPass = function(){
+window.abrirModalPass = function(obligatorio){
   document.getElementById('pass-actual').value='';
   document.getElementById('pass-nueva').value='';
   document.getElementById('pass-nueva2').value='';
   document.getElementById('pass-msg').style.display='none';
+  window._cambioClaveObligatorio = !!obligatorio;
+  document.getElementById('pass-aviso-obligatorio').style.display = obligatorio ? 'block' : 'none';
+  document.getElementById('btn-cancelar-pass').style.display = obligatorio ? 'none' : 'inline-flex';
   document.getElementById('modal-pass-overlay').style.display='flex';
 };
 window.cerrarModalPass = function(){
+  if(window._cambioClaveObligatorio) return; // no se puede cerrar sin cambiar la clave
   document.getElementById('modal-pass-overlay').style.display='none';
 };
 window.confirmarCambioPass = async function(){
@@ -4455,6 +4462,12 @@ window.confirmarCambioPass = async function(){
     const cred=window._EmailAuthProvider.credential(user.email,actual);
     await window._reauthenticateWithCredential(user,cred);
     await window._updatePassword(user,nueva);
+    if(window._cambioClaveObligatorio){
+      try{
+        await window._setDoc(window._doc(window._db,'usuarios',user.uid),{debeCambiarClave:false},{merge:true});
+      }catch(e){ console.warn('No se pudo limpiar debeCambiarClave:',e); }
+      window._cambioClaveObligatorio = false;
+    }
     cerrarModalPass();
     showStatus('Contraseña actualizada ✓');
   }catch(e){
@@ -4907,6 +4920,9 @@ function activarSesion(u,ud){
   window._vistaProceso = (ud.rol === 'proceso');
   window._usuarioActual = ud.nombre;
   iniciarPresencia();
+  if(ud.debeCambiarClave){
+    setTimeout(function(){ abrirModalPass(true); }, 300);
+  }
   document.getElementById('tb-username').textContent=ud.nombre;
  document.getElementById('tb-rolname').textContent=ud.rol==='gerencial'?'Gerencial':(ud.rol==='proceso'?'Jefa de Proceso':(ud.rol==='director'?'Director':'Operativo'));
   if(ud.rol==='gerencial') document.getElementById('tab-precio').classList.remove('hidden-tab');
@@ -4958,6 +4974,9 @@ function activarSesion(u,ud){
 window._activarSesion = activarSesion;
 window.doLogout=function(){
   window._pendingAutoLogin=false;
+  window._cambioClaveObligatorio=false;
+  var modalPass=document.getElementById('modal-pass-overlay');
+  if(modalPass) modalPass.style.display='none';
   if(window._presenciaInterval){clearInterval(window._presenciaInterval);window._presenciaInterval=null;}
   if(window._usuarioActual && window._fbReady){
     try{ window._deleteDoc(window._doc(window._db,'sesiones','ses-'+slugUsuario(window._usuarioActual))); }catch(e){}
