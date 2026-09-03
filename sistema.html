@@ -592,8 +592,8 @@ tr:hover td{background:#f8fcf8}
         <div class="card-title"><i class="ti ti-clipboard-plus"></i> Nueva Recepción/Compra de Materia Prima</div>
         <div class="form-grid">
           <div class="form-group" style="position:relative">
-            <label>Proveedor</label>
-            <input type="text" id="r-prov" placeholder="Buscar proveedor..." oninput="buscaProv(&#39;r-prov&#39;,&#39;drop-prov-r&#39;)" autocomplete="off">
+            <label>Productor</label>
+            <input type="text" id="r-prov" placeholder="Buscar productor..." oninput="buscaProv(&#39;r-prov&#39;,&#39;drop-prov-r&#39;)" autocomplete="off">
             <div class="agro-dropdown" id="drop-prov-r"></div>
           </div>
           <div class="form-group"><label>RUT Proveedor</label><input type="text" id="r-rut" placeholder="12.345.678-9" maxlength="13"></div>
@@ -689,7 +689,7 @@ tr:hover td{background:#f8fcf8}
             <option>Espárrago</option><option>Arándano</option><option>Mora</option>
             <option>Frambuesa</option><option>Frutilla</option><option>Uva</option><option>Kiwi</option><option>Cereza</option>
           </select>
-          <input type="text" id="fil-r-prov" placeholder="Buscar proveedor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
+          <input type="text" id="fil-r-prov" placeholder="Buscar productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
           <select id="fil-r-periodo" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
 
   <option value="">Todo el período</option>
@@ -713,7 +713,7 @@ tr:hover td{background:#f8fcf8}
           <button class="btn btn-export" onclick="exportarExcel(&#39;recepciones&#39;,&#39;tbl-rec&#39;)"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         </div>
         <div class="tbl-wrap"><table id="tbl-rec">
-          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Calidad</th><th>Kg Brutos</th><th>Kg Netos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th>Env. Ingr.</th><th>Env. Dev.</th><th>Saldo Env.</th><th>Deudor</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Productor</th><th>Especie</th><th>Calidad</th><th>Kg Brutos</th><th>Kg Netos</th><th>Bandejas</th><th>Guía</th><th>Estado</th><th>Ingresado por</th><th>Env. Ingr.</th><th>Env. Dev.</th><th>Saldo Env.</th><th>Deudor</th><th></th></tr></thead>
           <tbody id="tbody-rec">
     <tr>
       <td>09/06/2026</td><td>matias abdala</td><td>Arándano</td>
@@ -756,7 +756,7 @@ tr:hover td{background:#f8fcf8}
         <div class="form-grid">
           <div class="form-group" style="position:relative">
             <label>Proveedor / Productor</label>
-            <input type="text" id="c-prov" placeholder="Buscar proveedor..." oninput="buscaProv(&#39;c-prov&#39;,&#39;drop-prov-c&#39;)" autocomplete="off">
+            <input type="text" id="c-prov" placeholder="Buscar productor..." oninput="buscaProv(&#39;c-prov&#39;,&#39;drop-prov-c&#39;)" autocomplete="off">
             <div class="agro-dropdown" id="drop-prov-c"></div>
           </div>
           <div class="form-group"><label>RUT</label><input type="text" id="c-rut" placeholder="12.345.678-9" maxlength="13"></div>
@@ -797,12 +797,12 @@ tr:hover td{background:#f8fcf8}
             <option>Espárrago</option><option>Arándano</option><option>Mora</option>
             <option>Frambuesa</option><option>Frutilla</option><option>Uva</option><option>Kiwi</option><option>Cereza</option>
           </select>
-          <input type="text" id="fil-c-prov" placeholder="Proveedor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
+          <input type="text" id="fil-c-prov" placeholder="Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
           <button class="btn btn-secondary" style="height:32px;font-size:12px" onclick="renderCampoHist()"><i class="ti ti-search"></i> Buscar</button>
           <button class="btn btn-export" onclick="exportarExcel(&#39;campo&#39;,&#39;tbl-campo&#39;)"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
         </div>
         <div class="tbl-wrap"><table id="tbl-campo">
-          <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Producto</th><th>N° SAG</th><th>Carencia</th><th>F. Cosecha</th><th>Dosis</th><th>Superficie</th><th></th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Productor</th><th>Especie</th><th>Producto</th><th>N° SAG</th><th>Carencia</th><th>F. Cosecha</th><th>Dosis</th><th>Superficie</th><th></th></tr></thead>
           <tbody id="tbody-campo">
     <tr>
       <td>09/06/2026</td><td>matias abdala</td><td>Arándano</td>
@@ -856,7 +856,7 @@ tr:hover td{background:#f8fcf8}
         <div class="card">
           <div class="card-title"><i class="ti ti-package"></i> Ingresos de Envases (desde Recepción)</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <input type="text" id="fil-env-ing-prov" placeholder="🔍 Proveedor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
+            <input type="text" id="fil-env-ing-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
             <select id="fil-env-ing-esp" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
               <option value="">Todas las especies</option>
               <option>Espárrago</option><option>Arándano</option><option>Mora</option>
@@ -882,7 +882,7 @@ tr:hover td{background:#f8fcf8}
             <button class="btn btn-export" onclick="exportarExcel(&#39;ingresos&#39;,&#39;tbl-env-ing&#39;)"><i class="ti ti-file-spreadsheet"></i> Excel</button>
           </div>
           <div class="tbl-wrap"><table id="tbl-env-ing">
-            <thead><tr><th>Fecha</th><th>Proveedor</th><th>RUT</th><th>Especie</th><th>Tipo Envase</th><th>Cantidad</th><th></th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Productor</th><th>RUT</th><th>Especie</th><th>Tipo Envase</th><th>Cantidad</th><th></th></tr></thead>
             <tbody id="tbody-env-ing"><tr><td>09/06/2026</td><td>matias abdala</td><td>13.333.333-3</td><td>Arándano</td><td>Bandeja arándanos</td><td style="font-weight:700">500</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delRecEnv(&#39;mq7a0qlps0clv5yrls9&#39;)">🗑️</button></td></tr><tr><td>03/07/2026</td><td>david jara</td><td>11.111.111-1</td><td>Espárrago</td><td>Bandeja 3/4 (Espárrago/Kiwi/Uva/Cereza)</td><td style="font-weight:700">500</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delRecEnv(&#39;mq8koblqs3w8t9dd8eo&#39;)">🗑️</button></td></tr><tr><td>28/12/2026</td><td>luis miguel diaz</td><td>33.333.333-3</td><td>Arándano</td><td>Bandeja arándanos</td><td style="font-weight:700">700</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delRecEnv(&#39;mq8lqotjm9f8nl8qhk&#39;)">🗑️</button></td></tr><tr><td>11/06/2026</td><td>diego maradona</td><td>11.222.222-2</td><td>Mora</td><td>Rejilla verde (Mora/Frambuesa)</td><td style="font-weight:700">300</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delRecEnv(&#39;mq9ozndp3p9jqdze5ao&#39;)">🗑️</button></td></tr><tr><td>12/06/2026</td><td>juan sepulveda</td><td>15.921.321-8</td><td>Frambuesa</td><td>Rejilla verde (Mora/Frambuesa)</td><td style="font-weight:700">500</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delRecEnv(&#39;mqb6vjzh0m78yvg9qy3&#39;)">🗑️</button></td></tr></tbody>
           </table></div>
         </div>
@@ -894,8 +894,8 @@ tr:hover td{background:#f8fcf8}
           <div class="card-title"><i class="ti ti-package-export"></i> Registrar Devolución de Envases</div>
           <div class="form-grid">
             <div class="form-group" style="position:relative">
-              <label>Proveedor</label>
-              <input type="text" id="dev-prov" placeholder="Buscar proveedor..." oninput="buscaProv(&#39;dev-prov&#39;,&#39;drop-prov-dev&#39;)" autocomplete="off">
+              <label>Productor</label>
+              <input type="text" id="dev-prov" placeholder="Buscar productor..." oninput="buscaProv(&#39;dev-prov&#39;,&#39;drop-prov-dev&#39;)" autocomplete="off">
               <div class="agro-dropdown" id="drop-prov-dev"></div>
             </div>
             <div class="form-group"><label>RUT</label><input type="text" id="dev-rut" placeholder="Se llena automático" readonly="" style="background:#f5f5f5"></div>
@@ -919,7 +919,7 @@ tr:hover td{background:#f8fcf8}
         <div class="card">
           <div class="card-title"><i class="ti ti-list"></i> Historial Devoluciones</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <input type="text" id="fil-env-dev-prov" placeholder="🔍 Proveedor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
+            <input type="text" id="fil-env-dev-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
             <select id="fil-env-dev-periodo" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
               <option value="">Todo el período</option>
               <option value="hoy">Hoy</option><option value="semana">Esta semana</option><option value="mes">Este mes</option>
@@ -940,7 +940,7 @@ tr:hover td{background:#f8fcf8}
             <button class="btn btn-export" onclick="exportarExcel(&#39;devoluciones&#39;,&#39;tbl-dev&#39;)"><i class="ti ti-file-spreadsheet"></i> Excel</button>
           </div>
           <div class="tbl-wrap"><table id="tbl-dev">
-            <thead><tr><th>Fecha</th><th>Proveedor</th><th>RUT</th><th>Tipo Envase</th><th>Cantidad</th><th>Observaciones</th><th></th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Productor</th><th>RUT</th><th>Tipo Envase</th><th>Cantidad</th><th>Observaciones</th><th></th></tr></thead>
             <tbody id="tbody-dev"><tr><td>10/06/2026</td><td>david jara</td><td>11.111.111-1</td><td>Bandeja 3/4 (Espárrago/Kiwi/Uva/Cereza)</td><td>450</td><td>-</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delDev(&#39;mq8kple0ghzi3pqdhcj&#39;)">🗑️</button></td></tr><tr><td>11/06/2026</td><td>luis miguel diaz</td><td>33.333.333-3</td><td>Bandeja arándanos</td><td>800</td><td>-</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delDev(&#39;mq8sbt1hr9aeq0fe8t&#39;)">🗑️</button></td></tr><tr><td>11/06/2026</td><td>diego maradona</td><td>11.222.222-2</td><td>Rejilla verde (Mora/Frambuesa)</td><td>300</td><td>-</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delDev(&#39;mq9p0iycsex4x12z6oo&#39;)">🗑️</button></td></tr><tr><td>12/06/2026</td><td>juan sepulveda</td><td>15.921.321-8</td><td>Rejilla verde (Mora/Frambuesa)</td><td>700</td><td>-</td><td><button class="btn btn-danger" style="height:28px;font-size:15px;padding:0 8px" onclick="delDev(&#39;mqb75ru1qqldnw7frw&#39;)">🗑️</button></td></tr></tbody>
           </table></div>
         </div>
@@ -951,7 +951,7 @@ tr:hover td{background:#f8fcf8}
         <div class="card">
           <div class="card-title"><i class="ti ti-scale"></i> Saldo de Envases por Proveedor</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-            <input type="text" id="fil-sal-prov" placeholder="🔍 Proveedor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
+            <input type="text" id="fil-sal-prov" placeholder="🔍 Productor..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px;min-width:140px">
             <select id="fil-sal-esp" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
               <option value="">Todas las especies</option>
               <option>Espárrago</option><option>Arándano</option><option>Mora</option>
@@ -980,7 +980,7 @@ tr:hover td{background:#f8fcf8}
             </label>
           </div>
           <div class="tbl-wrap"><table id="tbl-saldo">
-            <thead><tr><th>Proveedor</th><th>RUT</th><th>Especie</th><th>Tipo Envase</th><th>Ingresadas</th><th>Devueltas</th><th>Saldo</th><th>Deudor</th></tr></thead>
+            <thead><tr><th>Productor</th><th>RUT</th><th>Especie</th><th>Tipo Envase</th><th>Ingresadas</th><th>Devueltas</th><th>Saldo</th><th>Deudor</th></tr></thead>
             <tbody id="tbody-saldo"></tbody>
           </table></div>
         </div>
@@ -1198,7 +1198,7 @@ tr:hover td{background:#f8fcf8}
           <button class="btn btn-secondary" onclick="renderQrList()"><i class="ti ti-search"></i> Buscar</button>
           </div>
           <div class="tbl-wrap"><table>
-            <thead><tr><th>Fecha</th><th>Proveedor</th><th>Especie</th><th>Kg</th><th>Guía</th><th>Acción</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Productor</th><th>Especie</th><th>Kg</th><th>Guía</th><th>Acción</th></tr></thead>
             <tbody id="tbody-qr">
     <tr><td>09/06/2026</td><td>matias abdala</td><td>Arándano</td>
     <td>4.500 kg</td><td>1</td>
@@ -4604,6 +4604,11 @@ window.showMod=function(mod,el){
 function getProveedores(){
   var mapa={};
   var todos=[].concat(
+    (DATA.productores||[]).map(function(p){
+      // especie puede venir como lista separada por coma; solo la usamos si es una sola
+      var espUnica=(p.especie||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+      return {prov:p.nombre||'',rut:p.rut||'',esp:espUnica.length===1?espUnica[0]:''};
+    }),
     DATA.campo.map(function(r){return {prov:r.proveedor||'',rut:r.rut||'',esp:r.especie||''}}),
     DATA.recepciones.map(function(r){return {prov:r.proveedor||'',rut:r.rut||'',esp:r.especie||''}})
   );
