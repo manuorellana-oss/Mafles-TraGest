@@ -976,7 +976,7 @@ tr:hover td{background:#f8fcf8}
             <button class="btn btn-secondary" style="height:32px;font-size:12px" onclick="renderSaldo()"><i class="ti ti-search"></i> Buscar</button>
             <button class="btn btn-export" onclick="exportarExcel(&#39;saldo&#39;,&#39;tbl-saldo&#39;)"><i class="ti ti-file-spreadsheet"></i> Excel</button>
             <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a4a2e;margin-left:8px">
-              <input type="checkbox" id="fil-sal-ocultar-saldados" checked onchange="renderSaldo()"> Ocultar saldados (✓ $0)
+              <input type="checkbox" id="fil-sal-ocultar-saldados" checked onchange="renderSaldo()"> Ocultar saldados (0)
             </label>
           </div>
           <div class="tbl-wrap"><table id="tbl-saldo">
@@ -5439,7 +5439,7 @@ window.renderSaldo=function(){
     return true;
   });
   if(!rows.length){
-    document.getElementById('tbody-saldo').innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:1rem">'+(ocultarSaldados?'Sin saldos pendientes (las cuentas saldadas están ocultas)':'Sin registros')+'</td></tr>';
+    document.getElementById('tbody-saldo').innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:1rem">'+(ocultarSaldados?'Sin saldos pendientes (las cuentas en 0 están ocultas)':'Sin registros')+'</td></tr>';
     return;
   }
   document.getElementById('tbody-saldo').innerHTML=rows.map(function(s){
