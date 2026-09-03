@@ -260,7 +260,31 @@ tr:hover td{background:#f8fcf8}
       <div id="pass-msg" style="font-size:12px;color:#c0392b;margin-bottom:10px;display:none"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="btn-logout" style="background:#eee;color:#333" onclick="cerrarModalPass()">Cancelar</button>
-        <button class="btn-logout" style="background:#2e7d52;color:#fff" onclick="confirmarCambioPass()">Guardar</button>
+  </div>
+
+  <div id="modal-cliente-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:12px;padding:22px;width:360px;max-width:90vw;box-shadow:0 8px 30px rgba(0,0,0,.25)">
+      <h3 style="font-size:15px;font-weight:700;color:#1a4a2e;margin-bottom:14px">Agregar cliente nuevo</h3>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">Razón Social</label>
+        <input type="text" id="nc-razon" placeholder="Nombre / Razón Social" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">RUT</label>
+        <input type="text" id="nc-rut" placeholder="12.345.678-9" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">Giro (opcional)</label>
+        <input type="text" id="nc-giro" placeholder="Giro comercial" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:#666;font-weight:600;display:block;margin-bottom:3px">Dirección (opcional)</label>
+        <input type="text" id="nc-direccion" placeholder="Dirección" style="width:100%;height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:7px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div id="nc-msg" style="font-size:12px;color:#c0392b;margin-bottom:10px;display:none"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-logout" style="background:#eee;color:#333" onclick="cerrarModalCliente()">Cancelar</button>
+        <button class="btn-logout" style="background:#2e7d52;color:#fff" onclick="confirmarClienteNuevo()">Guardar</button>
       </div>
     </div>
   </div>
@@ -1299,7 +1323,13 @@ tr:hover td{background:#f8fcf8}
       <div class="card">
         <div class="card-title"><i class="ti ti-truck-delivery"></i> Datos Generales de la Venta</div>
         <div class="form-grid">
-          <div class="form-group"><label>Cliente Destino</label><input type="text" id="v-cliente" placeholder="Nombre del cliente..."></div>
+          <div class="form-group" style="position:relative">
+            <label>Cliente Destino</label>
+            <input type="text" id="v-cliente" placeholder="Buscar cliente..." oninput="buscaCliente()" autocomplete="off">
+            <div class="agro-dropdown" id="drop-cliente"></div>
+          </div>
+          <div class="form-group"><label>RUT Cliente</label><input type="text" id="v-cliente-rut" readonly style="background:#f5f5f5" placeholder="Autocompletado"></div>
+          <div class="form-group"><label>Dirección Cliente</label><input type="text" id="v-cliente-dir" readonly style="background:#f5f5f5" placeholder="Autocompletado"></div>
           <div class="form-group"><label>Lugar de Venta</label><input type="text" id="v-lugar" placeholder="Ej: Longaví"></div>
           <div class="form-group">
             <label>Razón Social</label>
@@ -4177,6 +4207,7 @@ window._cargarDatosSistema = async function(){
   DATA.auditoria=await fbLoad('auditoria');
   DATA.liquidaciones=await fbLoad('liquidaciones');
   DATA.ventas=await fbLoad('ventas');
+  DATA.clientes=await fbLoad('clientes');
   renderRecepcionHist();renderCampoHist();renderEnvIngresos();renderDevHist();renderKpiHist();renderPrecioHist();renderQrList();poblarQrFiltros();renderDashboard();renderListaProd();renderConsolidadoHist();
   // Poblar datos de Resumen sin forzar el cambio de pestaña (evita sacar al usuario de donde esté navegando)
   initResumen();
@@ -4625,6 +4656,78 @@ window.selProv=function(inputId,dropId,prov,rut){
   }
 }
 
+// ===== CLIENTES (módulo Ventas) =====
+window.buscaCliente=function(){
+  var val=document.getElementById('v-cliente').value.toLowerCase();
+  var drop=document.getElementById('drop-cliente');
+  document.getElementById('v-cliente-rut').value='';
+  document.getElementById('v-cliente-dir').value='';
+  if(!val){drop.style.display='none';return;}
+  var lista=(DATA.clientes||[]);
+  var fil=lista.filter(function(c){return (c.razonSocial||'').toLowerCase().indexOf(val)===0;})
+    .concat(lista.filter(function(c){return (c.razonSocial||'').toLowerCase().indexOf(val)>0;}));
+  drop.innerHTML='';
+  fil.slice(0,8).forEach(function(c){
+    var div=document.createElement('div');
+    div.className='agro-item';
+    div.innerHTML='<div><div style="font-size:13px;font-weight:500">'+c.razonSocial+'</div>'
+      +'<div style="font-size:11px;color:#888">'+(c.rut||'')+(c.direccion?' &middot; '+c.direccion:'')+'</div></div>';
+    div.onclick=(function(id){return function(){selCliente(id);};})(c.id);
+    drop.appendChild(div);
+  });
+  var divNuevo=document.createElement('div');
+  divNuevo.className='agro-item';
+  divNuevo.style.color='#1a4a2e';
+  divNuevo.style.fontWeight='600';
+  divNuevo.innerHTML='+ Agregar cliente nuevo';
+  divNuevo.onclick=function(){abrirModalCliente();};
+  drop.appendChild(divNuevo);
+  drop.style.display='block';
+}
+window.selCliente=function(id){
+  var c=(DATA.clientes||[]).find(function(x){return x.id===id;});
+  if(!c)return;
+  document.getElementById('v-cliente').value=c.razonSocial||'';
+  document.getElementById('v-cliente-rut').value=c.rut||'';
+  document.getElementById('v-cliente-dir').value=c.direccion||'';
+  document.getElementById('drop-cliente').style.display='none';
+}
+window.abrirModalCliente=function(){
+  document.getElementById('drop-cliente').style.display='none';
+  document.getElementById('nc-razon').value=document.getElementById('v-cliente').value||'';
+  document.getElementById('nc-rut').value='';
+  document.getElementById('nc-giro').value='';
+  document.getElementById('nc-direccion').value='';
+  document.getElementById('nc-msg').style.display='none';
+  document.getElementById('modal-cliente-overlay').style.display='flex';
+}
+window.cerrarModalCliente=function(){
+  document.getElementById('modal-cliente-overlay').style.display='none';
+}
+window.confirmarClienteNuevo=async function(){
+  var razon=document.getElementById('nc-razon').value.trim();
+  var rut=document.getElementById('nc-rut').value.trim();
+  var giro=document.getElementById('nc-giro').value.trim();
+  var direccion=document.getElementById('nc-direccion').value.trim();
+  var msg=document.getElementById('nc-msg');
+  if(!razon){msg.textContent='Ingresa la Razón Social del cliente.';msg.style.display='block';return;}
+  try{
+    var cliente={id:uid(), razonSocial:razon, rut:rut, giro:giro, direccion:direccion, creadoPor:window._usuarioActual||'', _tsCreacion:Date.now()};
+    await fbSave('clientes', cliente);
+    if(!DATA.clientes) DATA.clientes=[];
+    DATA.clientes.push(cliente);
+    document.getElementById('v-cliente').value=cliente.razonSocial;
+    document.getElementById('v-cliente-rut').value=cliente.rut||'';
+    document.getElementById('v-cliente-dir').value=cliente.direccion||'';
+    cerrarModalCliente();
+    showStatus('Cliente agregado ✓');
+  }catch(e){
+    console.error(e);
+    msg.textContent='Ocurrió un error guardando el cliente.';
+    msg.style.display='block';
+  }
+}
+
 document.addEventListener('click',function(e){
   if(!e.target.closest('#prod-rut') && !e.target.closest('#drop-prod-rut')){
     var d = document.getElementById('drop-prod-rut');
@@ -4877,7 +4980,7 @@ window.guardarVenta=async function(){
 
     var venta = {
       id: folio, numeroVenta: folio,
-      cliente: cliente, lugarVenta: document.getElementById('v-lugar').value.trim(),
+      cliente: cliente, clienteRut: document.getElementById('v-cliente-rut').value.trim(), clienteDireccion: document.getElementById('v-cliente-dir').value.trim(), lugarVenta: document.getElementById('v-lugar').value.trim(),
       razonSocial: razon,
       fecha: document.getElementById('v-fecha').value||today(),
       hora: document.getElementById('v-hora').value||'',
@@ -4896,7 +4999,7 @@ window.guardarVenta=async function(){
     // Reset completo del formulario para una nueva venta
     window._ventaItems=[];
     renderTablaVentaItems();
-    ['v-cliente','v-lugar','v-guia'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    ['v-cliente','v-cliente-rut','v-cliente-dir','v-lugar','v-guia'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('v-razon').value='';
     document.getElementById('v-numero').value='Se genera al guardar';
     initVentas();
