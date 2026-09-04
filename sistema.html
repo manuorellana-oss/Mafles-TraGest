@@ -575,7 +575,7 @@ tr:hover td{background:#f8fcf8}
 
       <div class="res-fecha-sel">
         <label><i class="ti ti-calendar"></i> Ver resumen del día:</label>
-        <input type="date" id="res-fecha-input">
+        <input type="date" id="res-fecha-input" min="2020-01-01" max="2099-12-31">
         <label style="margin-left:8px"><i class="ti ti-plant-2"></i> Especie proceso:</label>
         <select id="res-esp-sel" style="height:34px;padding:0 10px;border:1px solid #d0e8d0;border-radius:8px;font-size:13px">
           <option value="">Todas</option>
@@ -610,7 +610,7 @@ tr:hover td{background:#f8fcf8}
               <option>Kiwi</option><option>Cereza</option>
             </select>
           </div>
-          <div class="form-group"><label>Fecha Recepción</label><input type="date" id="r-fecha"></div>
+          <div class="form-group"><label>Fecha Recepción</label><input type="date" id="r-fecha" min="2020-01-01" max="2099-12-31"></div>
           <div class="form-group"><label>N° Guía Despacho</label><input type="text" id="r-guia" placeholder="GD-0001"></div>
           <div class="form-group"><label>Kg Brutos Recibidos</label><input type="number" id="r-kg" placeholder="0.0" step="0.1" oninput="calcularDestareRecepcion()"></div>
           <div class="form-group"><label>Kg Netos Recibidos</label><input type="number" id="r-kg-neto" placeholder="0.0" step="0.1"></div>
@@ -743,7 +743,7 @@ tr:hover td{background:#f8fcf8}
               <option>Frambuesa</option><option>Frutilla</option><option>Uva</option><option>Kiwi</option><option>Cereza</option>
             </select>
           </div>
-          <div class="form-group"><label>Fecha Aplicación</label><input type="date" id="c-fecha"></div>
+          <div class="form-group"><label>Fecha Aplicación</label><input type="date" id="c-fecha" min="2020-01-01" max="2099-12-31"></div>
           <div class="form-group" style="position:relative">
             <label>Agroquímico (producto) — <span id="agro-esp-hint" style="color:#1a4a2e;font-weight:600;font-size:11px"></span></label>
             <input type="text" id="c-agro" placeholder="Buscar producto..." oninput="buscaAgro()" autocomplete="off">
@@ -754,7 +754,7 @@ tr:hover td{background:#f8fcf8}
           <div class="form-group"><label>Tipo</label><input type="text" id="c-tipo" readonly="" style="background:#f5f5f5" placeholder="Autocompletado"></div>
           <div class="form-group"><label>Fabricante</label><input type="text" id="c-fab" readonly="" style="background:#f5f5f5" placeholder="Autocompletado"></div>
           <div class="form-group"><label>Días Carencia</label><input type="number" id="c-carencia" placeholder="0"></div>
-          <div class="form-group"><label>Fecha Cosecha Estimada</label><input type="date" id="c-cosecha"></div>
+          <div class="form-group"><label>Fecha Cosecha Estimada</label><input type="date" id="c-cosecha" min="2020-01-01" max="2099-12-31"></div>
           <div class="form-group"><label>Dosis Aplicada</label><input type="text" id="c-dosis" placeholder="1 L/ha"></div>
           <div class="form-group"><label>Superficie (ha)</label><input type="number" id="c-sup" placeholder="0.0" step="0.1"></div>
           <div class="form-group"><label>Aplicador</label><input type="text" id="c-aplicador" placeholder="Nombre del aplicador"></div>
@@ -852,7 +852,7 @@ tr:hover td{background:#f8fcf8}
               </select>
             </div>
             <div class="form-group"><label>Cantidad devuelta</label><input type="number" id="dev-cant" placeholder="0" min="1"></div>
-            <div class="form-group"><label>Fecha</label><input type="date" id="dev-fecha"></div>
+            <div class="form-group"><label>Fecha</label><input type="date" id="dev-fecha" min="2020-01-01" max="2099-12-31"></div>
             <div class="form-group"><label>Observaciones</label><input type="text" id="dev-obs" placeholder="Opcional"></div>
           </div>
           <div class="btn-row">
@@ -955,7 +955,7 @@ tr:hover td{background:#f8fcf8}
         <div id="kpi-form">
           <div class="form-grid">
             <div class="form-group"><label>Especie</label><input type="text" id="kpi-esp" readonly="" style="background:#f5f5f5"></div>
-            <div class="form-group"><label>Fecha</label><input type="date" id="kpi-fecha"></div>
+            <div class="form-group"><label>Fecha</label><input type="date" id="kpi-fecha" min="2020-01-01" max="2099-12-31"></div>
             <div class="form-group"><label>Kg Entrantes a Proceso</label><input type="number" id="kpi-kgmp" placeholder="0.0" step="0.1" oninput="calcKpi()"></div>
             <div class="form-group"><label>Kg Resultantes</label><input type="number" id="kpi-kgpp" placeholder="0.0" step="0.1" oninput="calcKpi()"></div>
             <div class="form-group"><label>Precio de Compra ($/kg)</label><input type="number" id="kpi-cmp" placeholder="0" oninput="calcKpi()"></div>
@@ -1097,7 +1097,7 @@ tr:hover td{background:#f8fcf8}
         <div id="pv-form">
           <div class="form-grid">
             <div class="form-group"><label>Especie</label><input type="text" id="pv-esp" readonly="" style="background:#f5f5f5"></div>
-            <div class="form-group"><label>Fecha</label><input type="date" id="pv-fecha"></div>
+            <div class="form-group"><label>Fecha</label><input type="date" id="pv-fecha" min="2020-01-01" max="2099-12-31"></div>
             <div class="form-group"><label>Costo Total ($/kg) — desde KPI</label><input type="number" id="pv-costo" placeholder="0" oninput="calcPrecio()"></div>
             <div class="form-group"><label>Margen Deseado (%)</label><input type="number" id="pv-margen" placeholder="25" value="25" oninput="calcPrecio()"></div>
             <div class="form-group"><label>Costo Flete ($/kg)</label><input type="number" id="pv-flete" placeholder="0" oninput="calcPrecio()"></div>
@@ -1227,7 +1227,7 @@ tr:hover td{background:#f8fcf8}
           <input id="cc-guia" placeholder="N° referencia/guía (opcional)" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;min-width:160px">
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
-          <div class="form-group" style="margin:0"><label style="font-size:11px;color:#666">Fecha de despacho</label><input type="date" id="cc-fecha-despacho" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px" onchange="buscarPartidasConsolidado()"></div>
+          <div class="form-group" style="margin:0"><label style="font-size:11px;color:#666">Fecha de despacho</label><input type="date" id="cc-fecha-despacho" min="2020-01-01" max="2099-12-31" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px" onchange="buscarPartidasConsolidado()"></div>
           <div class="form-group" style="margin:0"><label style="font-size:11px;color:#666">Kilos objetivo</label><input type="number" id="cc-kg-objetivo" placeholder="8000" style="height:36px;padding:0 10px;border:1px solid #d0e8d0;border-radius:6px;font-size:13px;width:120px" oninput="actualizarTotalConsolidado()"></div>
           <button class="btn btn-secondary" style="height:36px;margin-top:16px" onclick="buscarPartidasConsolidado()"><i class="ti ti-search"></i> Buscar partidas</button>
         </div>
@@ -1289,7 +1289,7 @@ tr:hover td{background:#f8fcf8}
               <option>Fruticola Las Flores</option>
             </select>
           </div>
-          <div class="form-group"><label>Fecha Venta</label><input type="date" id="v-fecha"></div>
+          <div class="form-group"><label>Fecha Venta</label><input type="date" id="v-fecha" min="2020-01-01" max="2099-12-31"></div>
           <div class="form-group"><label>Hora Venta</label><input type="time" id="v-hora"></div>
           <div class="form-group"><label>Guía Despacho</label><input type="text" id="v-guia" placeholder="Opcional"></div>
           <div class="form-group"><label>N° Venta</label><input type="text" id="v-numero" readonly style="background:#f5f5f5;font-weight:700" value="Se genera al guardar"></div>
@@ -1412,8 +1412,8 @@ tr:hover td{background:#f8fcf8}
             <input type="text" id="liq-buscar-prod" placeholder="Escribe RUT o nombre..." oninput="buscarProductorLiq()" autocomplete="off">
             <div class="agro-dropdown" id="drop-liq-prod"></div>
           </div>
-          <div class="form-group"><label>Fecha desde</label><input type="date" id="liq-fecha-desde"></div>
-          <div class="form-group"><label>Fecha hasta</label><input type="date" id="liq-fecha-hasta"></div>
+          <div class="form-group"><label>Fecha desde</label><input type="date" id="liq-fecha-desde" min="2020-01-01" max="2099-12-31"></div>
+          <div class="form-group"><label>Fecha hasta</label><input type="date" id="liq-fecha-hasta" min="2020-01-01" max="2099-12-31"></div>
         </div>
         <div id="liq-prod-seleccionado" style="display:none;margin:.5rem 0;padding:8px 12px;background:#eef7ee;border-radius:8px;font-size:13px">
           <b>Productor seleccionado:</b> <span id="liq-prod-nombre"></span> — <span id="liq-prod-rut"></span>
