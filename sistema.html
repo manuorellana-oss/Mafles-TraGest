@@ -7165,17 +7165,23 @@ window.renderQrList=function(){
   const prov=document.getElementById('qr-prov-fil')?.value||'';
   const esp=document.getElementById('qr-esp-fil')?.value||'';
   var hoy=new Date();hoy.setHours(0,0,0,0);var qrPeriodo=document.getElementById('fil-qr-periodo')?.value||'';const fil=DATA.recepciones.filter(r=>(!prov||r.proveedor===prov)&&(!esp||r.especie===esp)&&(!qrPeriodo||(function(){var fd=new Date(r.fecha+'T12:00:00');fd.setHours(0,0,0,0);if(qrPeriodo==='hoy')return fd.getTime()===hoy.getTime();if(qrPeriodo==='semana'){var lun=new Date(hoy);lun.setDate(hoy.getDate()-((hoy.getDay()+6)%7));var dom=new Date(lun);dom.setDate(lun.getDate()+6);dom.setHours(23,59,59,999);return fd>=lun&&fd<=dom;}if(qrPeriodo==='mes')return fd.getMonth()===hoy.getMonth()&&fd.getFullYear()===hoy.getFullYear();return true;})()));
-  document.getElementById('tbody-qr').innerHTML=fil.map(r=>`
-    <tr><td>${fmtFecha(r.fecha)}</td><td>${r.proveedor}</td><td>${r.especie}</td>
+  document.getElementById('tbody-qr').innerHTML=fil.map(r=>{
+    const tieneCampo=DATA.campo.some(function(cc){return cc.proveedor===r.proveedor&&cc.especie===r.especie;});
+    const avisoCampo=tieneCampo?'':' <span class="badge badge-red" title="No existe registro de Campo para este productor/especie">Sin Campo</span>';
+    return `<tr><td>${fmtFecha(r.fecha)}</td><td>${r.proveedor}</td><td>${r.especie}${avisoCampo}</td>
     <td>${fmtNum(r.kg)} kg</td><td>${r.guia||'-'}</td>
-    <td><button class="btn btn-primary" style="height:28px;font-size:11px;padding:0 10px" onclick="genQR('${r.id}')"><i class="ti ti-qrcode" style="font-size:11px"></i> Generar QR</button></td></tr>`
-  ).join('')||'<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin recepciones</td></tr>';
+    <td><button class="btn btn-primary" style="height:28px;font-size:11px;padding:0 10px" onclick="genQR('${r.id}')"><i class="ti ti-qrcode" style="font-size:11px"></i> Generar QR</button></td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin recepciones</td></tr>';
 }
 window.genQR=function(id){
   if(!window._dataReady){alert('Los datos todavía se están cargando, espera un momento y vuelve a intentar.');return;}
   var r=DATA.recepciones.find(function(x){return x.id===id;});
   if(!r)return;
   var agros=DATA.campo.filter(function(cc){return cc.proveedor===r.proveedor&&cc.especie===r.especie;});
+  if(agros.length===0){
+    alert('No se puede generar el QR: no existe registro de Campo para el productor "'+r.proveedor+'" y especie "'+r.especie+'". Debes ingresar el registro de Campo correspondiente antes de generar el código QR.');
+    return;
+  }
   var txt='https://mafles-tra-gest.vercel.app/trazabilidad.html?id='+r.id;
   document.getElementById('qr-preview').style.display='block';
   var qrImg=document.getElementById('qr-canvas');
