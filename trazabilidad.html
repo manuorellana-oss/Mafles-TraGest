@@ -147,30 +147,34 @@ function renderVistaConsolidadaPublica(cc, detalle){
   html+='<div class="row"><span class="lbl">Fecha despacho</span><span class="val">'+fmtFecha(cc.fechaDespacho)+'</span></div>';
   html+='<div class="row"><span class="lbl">Kilos totales</span><span class="val">'+fmtNum(cc.kilosTotales)+' kg</span></div>';
   html+='</div>';
-  detalle.forEach(d=>{
-    html+='<div class="card">';
-    html+='<div class="section-title">Partida — '+d.proveedor+' ('+fmtNum(d.kilosAportados)+' kg)</div>';
-    if(!d.agros.length){
-      html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
-    }else{
-      html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Ingr. activo</th><th>Dosis</th><th>Fecha Aplic.</th><th>Carencia</th><th>Cumple</th></tr></thead><tbody>';
-      d.agros.forEach(a=>{
-        const cum=cumpleCarencia(a.cosecha, cc.fechaDespacho);
-        html+='<tr>';
-        html+='<td><strong>'+a.agroquimico+'</strong></td>';
-        html+='<td>'+(a.sag||'-')+'</td>';
-        html+='<td>'+(a.pa||'-')+'</td>';
-        html+='<td>'+(a.dosis||'-')+'</td>';
-        html+='<td>'+fmtFecha(a.fecha)+'</td>';
-        html+='<td>'+(a.carencia||'-')+'d</td>';
-        html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
-        html+='</tr>';
-      });
-      html+='</tbody></table></div>';
-    }
-    html+='</div>';
-  });
-  html+='<div class="card"><button class="btn-pdf" onclick="window.descargarPDFTrazabilidad()">⬇ Descargar PDF</button></div>';
+
+  // Se combinan los agroquímicos de todas las partidas en una sola tabla,
+  // sin exponer el productor de origen de cada partida (igual que la vista de carga simple)
+  const agrosTotal=[];
+  detalle.forEach(d=>{ (d.agros||[]).forEach(a=>agrosTotal.push(a)); });
+
+  html+='<div class="card">';
+  html+='<div class="section-title">Agroquímicos aplicados al cultivo</div>';
+  if(agrosTotal.length===0){
+    html+='<div style="color:#aaa;text-align:center;padding:16px">Sin registros de agroquímicos</div>';
+  }else{
+    html+='<div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>N° SAG</th><th>Ingr. activo</th><th>Dosis</th><th>Fecha Aplic.</th><th>Carencia</th><th>Cumple</th></tr></thead><tbody>';
+    agrosTotal.forEach(a=>{
+      const cum=cumpleCarencia(a.cosecha, cc.fechaDespacho);
+      html+='<tr>';
+      html+='<td><strong>'+a.agroquimico+'</strong></td>';
+      html+='<td>'+(a.sag||'-')+'</td>';
+      html+='<td>'+(a.pa||'-')+'</td>';
+      html+='<td>'+(a.dosis||'-')+'</td>';
+      html+='<td>'+fmtFecha(a.fecha)+'</td>';
+      html+='<td>'+(a.carencia||'-')+'d</td>';
+      html+='<td class="'+(cum.ok?'cumple-ok':'cumple-no')+'">'+cum.txt+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+  html+='<button class="btn-pdf" onclick="window.descargarPDFTrazabilidad()">⬇ Descargar PDF</button>';
+  html+='</div>';
   return html;
 }
 
@@ -265,22 +269,16 @@ function generarPDFConsolidado(cc, detalle){
   pdf.text('Kilos totales: '+fmtNum(cc.kilosTotales)+' kg', 14, 44);
 
   let y=52;
-  (detalle||[]).forEach(d=>{
-    if(y>250){ pdf.addPage(); y=20; }
-    pdf.setFontSize(11);
-    pdf.setTextColor(verde[0],verde[1],verde[2]);
-    pdf.text('Partida — '+d.proveedor+' ('+fmtNum(d.kilosAportados)+' kg)', 14, y);
-    y+=4;
-    const rows=(d.agros||[]).map(a=>[fmtFecha(a.fecha), a.agroquimico||'-', a.pa||'-', a.dosis||'-', (a.carencia||'-')+' d']);
-    pdf.autoTable({
-      startY:y,
-      head:[['Fecha','Producto','Ingrediente activo','Dosis','Carencia']],
-      body: rows.length?rows:[['-','Sin registros de agroquímicos','-','-','-']],
-      headStyles:{fillColor:verde,textColor:255,fontSize:8},
-      styles:{fontSize:8,cellPadding:2.5},
-      margin:{left:14,right:14}
-    });
-    y=pdf.lastAutoTable.finalY+10;
+  const agrosTotal=[];
+  (detalle||[]).forEach(d=>{ (d.agros||[]).forEach(a=>agrosTotal.push(a)); });
+  const rows=agrosTotal.map(a=>[fmtFecha(a.fecha), a.agroquimico||'-', a.pa||'-', a.dosis||'-', (a.carencia||'-')+' d']);
+  pdf.autoTable({
+    startY:y,
+    head:[['Fecha','Producto','Ingrediente activo','Dosis','Carencia']],
+    body: rows.length?rows:[['-','Sin registros de agroquímicos','-','-','-']],
+    headStyles:{fillColor:verde,textColor:255,fontSize:8},
+    styles:{fontSize:8,cellPadding:2.5},
+    margin:{left:14,right:14}
   });
 
   const fechaArchivo=(cc.fechaDespacho||new Date().toISOString().slice(0,10));
