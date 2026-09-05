@@ -714,6 +714,7 @@ tr:hover td{background:#f8fcf8}
   </optgroup>
 </select>
           <button class="btn btn-secondary" style="height:32px;font-size:12px" onclick="renderRecepcionHist()"><i class="ti ti-search"></i> Buscar</button>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555"><input type="checkbox" id="fil-r-mostrar-ocultos" onchange="renderRecepcionHist()"> Mostrar ocultos</label>
           <button class="btn btn-export" onclick="exportarExcel(&#39;recepciones&#39;,&#39;tbl-rec&#39;)"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
           <button class="btn btn-danger" id="btn-borrar-sel-rec" style="height:32px;font-size:12px;display:none" onclick="borrarSeleccionadosRec()"><i class="ti ti-trash"></i> Eliminar seleccionados (<span id="cont-sel-rec">0</span>)</button>
         </div>
@@ -1403,9 +1404,21 @@ tr:hover td{background:#f8fcf8}
 
       <div class="card">
         <div class="card-title"><i class="ti ti-list"></i> Historial de Ventas</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <input type="text" id="fil-v-cliente" placeholder="Buscar cliente..." style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
+          <select id="fil-v-periodo" style="height:32px;padding:0 8px;border:1px solid #d0e8d0;border-radius:6px;font-size:12px">
+            <option value="">Todo el período</option>
+            <option value="hoy">Hoy</option>
+            <option value="semana">Esta semana</option>
+            <option value="mes">Este mes</option>
+          </select>
+          <button class="btn btn-secondary" style="height:32px;font-size:12px" onclick="renderHistorialVentas()"><i class="ti ti-search"></i> Buscar</button>
+          <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#555"><input type="checkbox" id="fil-v-mostrar-ocultos" onchange="renderHistorialVentas()"> Mostrar ocultos</label>
+          <button class="btn btn-export" onclick="exportarExcel('ventas','tbl-ventas-hist')"><i class="ti ti-file-spreadsheet"></i> Exportar Excel</button>
+        </div>
         <div class="tbl-wrap"><table id="tbl-ventas-hist">
-          <thead><tr><th>N° Venta</th><th>Fecha</th><th>Cliente</th><th>Kg Netos</th><th>Total</th><th></th></tr></thead>
-          <tbody id="tbody-ventas-hist"><tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin ventas registradas</td></tr></tbody>
+          <thead><tr><th>N° Venta</th><th>Fecha</th><th>Cliente</th><th>Kg Netos</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="tbody-ventas-hist"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:1rem">Sin ventas registradas</td></tr></tbody>
         </table></div>
       </div>
     </div>
@@ -5318,13 +5331,36 @@ window.initVentas=function(){
 function renderHistorialVentas(){
   var tbody=document.getElementById('tbody-ventas-hist');
   if(!tbody) return;
-  var ventas=(DATA.ventas||[]).slice().sort(function(a,b){return (b._tsCreacion||0)-(a._tsCreacion||0);});
+  var cliente=document.getElementById('fil-v-cliente')?.value.toLowerCase()||'';
+  var periodo=document.getElementById('fil-v-periodo')?.value||'';
+  var mostrarOcultos=document.getElementById('fil-v-mostrar-ocultos')?.checked||false;
+  var hoy=new Date();hoy.setHours(0,0,0,0);
+  var ventas=(DATA.ventas||[]).filter(function(v){
+    if(!mostrarOcultos&&v.oculto)return false;
+    if(cliente&&!(v.cliente||'').toLowerCase().includes(cliente))return false;
+    if(periodo){
+      var fd=new Date(v.fecha+'T12:00:00');fd.setHours(0,0,0,0);
+      if(periodo==='hoy'&&fd.getTime()!==hoy.getTime())return false;
+      if(periodo==='semana'){var lun=new Date(hoy);lun.setDate(hoy.getDate()-((hoy.getDay()+6)%7));var dom=new Date(lun);dom.setDate(lun.getDate()+6);dom.setHours(23,59,59,999);if(fd<lun||fd>dom)return false;}
+      if(periodo==='mes'&&(fd.getMonth()!==hoy.getMonth()||fd.getFullYear()!==hoy.getFullYear()))return false;
+    }
+    return true;
+  }).sort(function(a,b){return (b._tsCreacion||0)-(a._tsCreacion||0);});
   tbody.innerHTML=ventas.map(function(v){
     var r=v.resumen||{};
-    return '<tr><td>'+(v.numeroVenta||v.id)+'</td><td>'+fmtFecha(v.fecha)+'</td><td>'+(v.cliente||'-')+'</td>'
+    return '<tr'+(v.oculto?' style="opacity:.55"':'')+'><td>'+(v.numeroVenta||v.id)+'</td><td>'+fmtFecha(v.fecha)+'</td><td>'+(v.cliente||'-')+'</td>'
       +'<td>'+fmtNum(r.kgNetos||0)+' kg</td><td>$'+fmtNum(r.total||0)+'</td>'
-      +'<td><button class="btn btn-secondary" style="height:28px;font-size:11px;padding:0 8px" onclick="generarConstanciaVenta(\''+v.id+'\')"><i class="ti ti-file-download"></i> PDF</button></td></tr>';
-  }).join('')||'<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin ventas registradas</td></tr>';
+      +'<td>'+(v.oculto?'<span class="badge badge-amber">Oculto</span>':'')+'</td>'
+      +'<td style="white-space:nowrap"><button class="btn btn-secondary" style="height:28px;font-size:11px;padding:0 8px;margin-right:4px" onclick="generarConstanciaVenta(\''+v.id+'\')"><i class="ti ti-file-download"></i> PDF</button>'
+      +'<button class="btn btn-secondary" style="height:28px;font-size:11px;padding:0 8px" onclick="toggleOcultoVenta(\''+v.id+'\')"><i class="ti ti-eye'+(v.oculto?'':'-off')+'"></i> '+(v.oculto?'Restaurar':'Ocultar')+'</button></td></tr>';
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:#aaa;padding:1rem">Sin ventas registradas</td></tr>';
+}
+window.toggleOcultoVenta=async function(id){
+  var v=(DATA.ventas||[]).find(function(x){return x.id===id;});
+  if(!v)return;
+  v.oculto=!v.oculto;
+  await fbSave('ventas',v);
+  renderHistorialVentas();
 }
 window.calcularKgNetoVenta=function(){
   const kgBruto=parseFloat(document.getElementById('v-kg-bruto').value)||0;
@@ -5552,8 +5588,10 @@ window.renderRecepcionHist=function(){
   var esp=document.getElementById('fil-r-esp')?.value||'';
   var prov=document.getElementById('fil-r-prov')?.value.toLowerCase()||'';
   var periodo=document.getElementById('fil-r-periodo')?.value||'';
+  var mostrarOcultos=document.getElementById('fil-r-mostrar-ocultos')?.checked||false;
   var hoy=new Date();hoy.setHours(0,0,0,0);
   var fil=DATA.recepciones.filter(function(r){
+    if(!mostrarOcultos&&r.oculto)return false;
     if(esp&&r.especie!==esp)return false;
     if(prov&&!r.proveedor.toLowerCase().includes(prov))return false;
     if(periodo){
@@ -5574,23 +5612,31 @@ window.renderRecepcionHist=function(){
     var deudorTxt=sal>0?'MAFLES debe al productor':sal<0?'Productor debe a MAFLES':'✓ Saldado';
     var colorSal=sal>0?'#c0392b':sal<0?'#e67e22':'#27ae60';
     return `
-    <tr>
+    <tr${r.oculto?' style="opacity:.55"':''}>
       <td><input type="checkbox" class="chk-rec-row" value="${r.id}" onchange="actualizarContadorSelRec()" style="cursor:pointer"></td>
       <td>${fmtFecha(r.fecha)}</td><td>${r.proveedor}</td><td>${r.especie}</td>
       <td style="font-size:11px;color:#555">${[r.estadoAgricola,r.variedad,r.conservacion].filter(Boolean).join(' · ')||'-'}</td>
       <td>${fmtNum(r.kg)} kg</td><td>${fmtNum(r.kgNeto)} kg</td><td>${r.bandejas||0}</td><td>${r.guia||'-'}</td>
-      <td><span class="badge badge-green">${r.estado||'Recibido'}</span></td>
+      <td><span class="badge badge-green">${r.estado||'Recibido'}</span>${r.oculto?' <span class="badge badge-amber">Oculto</span>':''}</td>
       <td style="font-size:11px;color:#888">${r.creadoPor||'-'}</td>
       <td>${fmtNum(s.ing)}</td><td>${fmtNum(s.dev)}</td>
       <td style="font-weight:700;color:${colorSal}">${fmtNum(sal)}</td>
       <td style="font-size:11px;font-weight:600;color:${colorSal}">${deudorTxt}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-secondary" style="height:30px;font-size:11px;padding:0 8px;margin-right:4px" onclick="generarConstanciaRecepcion('${r.id}')"><i class="ti ti-file-download"></i> PDF</button>
+        <button class="btn btn-secondary" style="height:30px;font-size:11px;padding:0 8px;margin-right:4px" onclick="toggleOcultoRec('${r.id}')"><i class="ti ti-eye${r.oculto?'':'-off'}"></i> ${r.oculto?'Restaurar':'Ocultar'}</button>
         <button class="btn btn-danger" style="height:30px;font-size:15px;padding:0 10px;min-width:36px" onclick="delRec('${r.id}')">🗑️</button>
       </td>
     </tr>`;}).join('')||'<tr><td colspan="15" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
   var chkAll=document.getElementById('chk-rec-all'); if(chkAll) chkAll.checked=false;
   actualizarContadorSelRec();
+}
+window.toggleOcultoRec=async function(id){
+  var r=DATA.recepciones.find(function(x){return x.id===id;});
+  if(!r)return;
+  r.oculto=!r.oculto;
+  await fbSave('recepciones',r);
+  renderRecepcionHist();
 }
 window.toggleTodosRec=function(chkAll){
   document.querySelectorAll('.chk-rec-row').forEach(function(c){c.checked=chkAll.checked;});
