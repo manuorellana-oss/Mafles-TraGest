@@ -627,14 +627,12 @@ tr:hover td{background:#f8fcf8}
             </select>
           </div>
           <div class="form-group"><label>Variedad</label><input type="text" id="r-variedad" placeholder="Ej: Heritage, Navajo, Crimson..."></div>
-          <div class="form-group">
-            <label>Conservación / Calidad</label>
+          <div class="form-group"><label>Conservación / Calidad</label>
             <select id="r-conservacion">
               <option value="">Seleccionar...</option>
               <option>Fresco</option><option>IQF</option><option>Block</option><option>Congelado</option><option>Otro</option>
             </select>
           </div>
-          <div class="form-group"><label>N° Bandejas</label><input type="number" id="r-bandejas" placeholder="0" min="0" oninput="calcularDestareRecepcion()"></div>
           <div class="form-group"><label>Zona de Recolección</label><input type="text" id="r-campo" placeholder="Ej: Cuartel Norte - Sector 3"></div>
           <div class="form-group" id="grupo-sag-prod" style="display:none">
             <label id="lbl-sag-prod"><i class="ti ti-shield-check"></i> Código SAG Productor <span style="font-size:11px;font-weight:400;color:#c0392b">(obligatorio para Arándano)</span></label>
@@ -654,29 +652,40 @@ tr:hover td{background:#f8fcf8}
         </div>
 
         <div style="margin-top:1rem">
-          <div class="card-title" style="margin-bottom:.5rem"><i class="ti ti-scale"></i> Destare (Bandejas y Pallets)</div>
+          <div class="card-title" style="margin-bottom:.5rem"><i class="ti ti-stack-2"></i> Detalle de Pallets</div>
+          <p style="font-size:11px;color:#888;margin:-4px 0 8px">Un mismo productor puede llegar con varios pallets, y no todos pesan igual ni vienen en el mismo tipo de envase. Agrega cada pallet por separado; el sistema suma los totales automáticamente.</p>
           <div class="form-grid">
-            <div class="form-group"><label>Peso Destare por Bandeja (kg)</label><input type="number" id="r-destare-bandeja" placeholder="0.0" step="0.01" min="0" oninput="calcularDestareRecepcion()"></div>
-            <div class="form-group"><label>N° Pallets</label><input type="number" id="r-pallets" placeholder="0" min="0" oninput="calcularDestareRecepcion()"></div>
-            <div class="form-group"><label>Peso Destare por Pallet (kg)</label><input type="number" id="r-destare-pallet" placeholder="0.0" step="0.01" min="0" oninput="calcularDestareRecepcion()"></div>
+            <div class="form-group">
+              <label>Tipo de Envase (este pallet)</label>
+              <select id="rp-envase">
+                <option value="">Seleccionar...</option>
+                <option>Bandeja 3/4 (Espárrago/Kiwi/Uva/Cereza)</option>
+                <option>Bandeja arándanos</option>
+                <option>Rejilla verde (Mora/Frambuesa)</option>
+                <option>Bandeja frutillera</option>
+                <option>Bins</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div class="form-group"><label>N° Bandejas (este pallet)</label><input type="number" id="rp-bandejas" placeholder="0" min="0"></div>
+            <div class="form-group"><label>Peso Destare por Bandeja (kg)</label><input type="number" id="rp-destare-bandeja" placeholder="0.0" step="0.01" min="0"></div>
+            <div class="form-group"><label>Peso Destare del Pallet (kg)</label><input type="number" id="rp-destare-pallet" placeholder="0.0" step="0.01" min="0"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="agregarPalletRecepcion()"><i class="ti ti-plus"></i> Agregar Pallet</button>
+          </div>
+          <div class="tbl-wrap"><table id="tbl-rec-pallets">
+            <thead><tr><th>N° Pallet</th><th>Envase</th><th>N° Bandejas</th><th>Destare/Bandeja</th><th>Destare Pallet</th><th>Subtotal Destare</th><th></th></tr></thead>
+            <tbody id="tbody-rec-pallets"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:1rem">Sin pallets agregados aún</td></tr></tbody>
+          </table></div>
+          <div class="form-grid" style="margin-top:.5rem">
+            <div class="form-group"><label>Total Pallets</label><input type="text" id="rec-tot-pallets" readonly style="background:#f5f5f5" value="0"></div>
+            <div class="form-group"><label>Total Bandejas</label><input type="text" id="rec-tot-bandejas" readonly style="background:#f5f5f5" value="0"></div>
             <div class="form-group"><label>Destare Total (kg)</label><input type="text" id="r-destare-total" readonly style="background:#f5f5f5;font-weight:700"></div>
           </div>
-          <p style="font-size:11px;color:#888;margin-top:4px">El peso de destare por bandeja y por pallet se ingresa libremente, ya que varía según el tipo de envase utilizado. El Destare Total se resta del Kg Bruto para sugerir el Kg Neto (puedes ajustarlo manualmente si es necesario).</p>
         </div>
 
         <div class="form-grid" style="margin-top:1rem">
-          <div class="form-group">
-            <label>Envase Asignado</label>
-            <select id="r-envase">
-              <option value="">Seleccionar...</option>
-              <option>Bandeja 3/4 (Espárrago/Kiwi/Uva/Cereza)</option>
-              <option>Bandeja arándanos</option>
-              <option>Rejilla verde (Mora/Frambuesa)</option>
-              <option>Bandeja frutillera</option>
-              <option>Bins</option>
-              <option>Otro</option>
-            </select>
-          </div>
           <div class="form-group"><label>Observaciones</label><textarea id="r-obs" placeholder="Observaciones adicionales..."></textarea></div>
         </div>
         <div class="btn-row">
@@ -5303,7 +5312,8 @@ window.toggleSagProd=function(){
 }
 window.setEnvaseAuto=function(){
   const esp=document.getElementById('r-esp').value;
-  document.getElementById('r-envase').value=ENVASES_X_ESP[esp]||'';
+  const elRpEnvase=document.getElementById('rp-envase');
+  if(elRpEnvase) elRpEnvase.value=ENVASES_X_ESP[esp]||'';
   renderEvalGrid(esp);
 }
 function renderEvalGrid(esp){
@@ -5511,12 +5521,40 @@ window.guardarVenta=async function(){
 }
 
 // ===== RECEPCION SAVE =====
+window._recepcionPallets=[];
+window.agregarPalletRecepcion=function(){
+  var envase=document.getElementById('rp-envase').value;
+  var bandejas=parseInt(document.getElementById('rp-bandejas').value)||0;
+  var destareBandeja=parseFloat(document.getElementById('rp-destare-bandeja').value)||0;
+  var destarePallet=parseFloat(document.getElementById('rp-destare-pallet').value)||0;
+  if(!envase){alert('Selecciona el tipo de envase de este pallet');return;}
+  if(!bandejas){alert('Ingresa el número de bandejas de este pallet');return;}
+  var subtotalDestare=(bandejas*destareBandeja)+destarePallet;
+  window._recepcionPallets.push({envase:envase,bandejas:bandejas,destareBandeja:destareBandeja,destarePallet:destarePallet,subtotalDestare:subtotalDestare});
+  renderTablaPalletsRecepcion();
+  ['rp-bandejas','rp-destare-bandeja','rp-destare-pallet'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  showStatus('Pallet agregado ✓');
+}
+window.eliminarPalletRecepcion=function(idx){
+  window._recepcionPallets.splice(idx,1);
+  renderTablaPalletsRecepcion();
+}
+function renderTablaPalletsRecepcion(){
+  var items=window._recepcionPallets;
+  var tbody=document.getElementById('tbody-rec-pallets');
+  if(tbody) tbody.innerHTML=items.map(function(p,idx){
+    return '<tr><td>'+(idx+1)+'</td><td>'+p.envase+'</td><td>'+p.bandejas+'</td><td>'+fmtNum(p.destareBandeja)+' kg</td><td>'+fmtNum(p.destarePallet)+' kg</td><td style="font-weight:600">'+fmtNum(p.subtotalDestare)+' kg</td>'
+      +'<td><button class="btn btn-danger" style="height:28px;font-size:13px;padding:0 8px;min-width:30px" onclick="eliminarPalletRecepcion('+idx+')">🗑️</button></td></tr>';
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:#aaa;padding:1rem">Sin pallets agregados aún</td></tr>';
+  calcularDestareRecepcion();
+}
 window.calcularDestareRecepcion=function(){
-  const bandejas=parseFloat(document.getElementById('r-bandejas').value)||0;
-  const destareBandeja=parseFloat(document.getElementById('r-destare-bandeja').value)||0;
-  const pallets=parseFloat(document.getElementById('r-pallets').value)||0;
-  const destarePallet=parseFloat(document.getElementById('r-destare-pallet').value)||0;
-  const destareTotal=(bandejas*destareBandeja)+(pallets*destarePallet);
+  var items=window._recepcionPallets;
+  var totalPallets=items.length;
+  var totalBandejas=items.reduce(function(s,p){return s+(p.bandejas||0);},0);
+  var destareTotal=items.reduce(function(s,p){return s+(p.subtotalDestare||0);},0);
+  var elTotPallets=document.getElementById('rec-tot-pallets'); if(elTotPallets) elTotPallets.value=totalPallets;
+  var elTotBandejas=document.getElementById('rec-tot-bandejas'); if(elTotBandejas) elTotBandejas.value=totalBandejas;
   document.getElementById('r-destare-total').value=fmtNum(destareTotal)+' kg';
   const kgBruto=parseFloat(document.getElementById('r-kg').value)||0;
   if(kgBruto>0){
@@ -5528,10 +5566,10 @@ window.saveRecepcion=function(){
   const esp=document.getElementById('r-esp').value;
   const prov=document.getElementById('r-prov').value.trim();
   const kg=parseFloat(document.getElementById('r-kg').value)||0;
-  const bandejas=parseInt(document.getElementById('r-bandejas').value)||0;
+  const palletsDetalle=window._recepcionPallets;
   if(!prov||!esp){alert('Ingresa proveedor y especie');return}
   if(!kg){alert('Ingresa los kilogramos recibidos');return}
-  if(!bandejas){alert('Ingresa el numero de bandejas');return}
+  if(!palletsDetalle.length){alert('Agrega al menos un pallet en "Detalle de Pallets"');return}
   if(esp==='Arándano'){
     var sagProd=document.getElementById('r-sag-prod').value.trim();
     if(!sagProd){alert('Ingresa el Codigo SAG del productor (obligatorio para Arandano)');return}
@@ -5543,6 +5581,10 @@ window.saveRecepcion=function(){
     if(!v){alert('Completa todos los criterios de evaluación visual');return}
     eval_data[c]=v;
   }
+  const totalBandejas=palletsDetalle.reduce(function(s,p){return s+(p.bandejas||0);},0);
+  const totalDestare=palletsDetalle.reduce(function(s,p){return s+(p.subtotalDestare||0);},0);
+  const envasesUnicos=[...new Set(palletsDetalle.map(function(p){return p.envase;}))];
+  const envaseConsolidado=envasesUnicos.length===1?envasesUnicos[0]:'Mixto';
   const rec={
     id:uid(),fecha:document.getElementById('r-fecha').value||today(),
     proveedor:prov,rut:document.getElementById('r-rut').value,
@@ -5555,13 +5597,12 @@ window.saveRecepcion=function(){
     estadoAgricola:document.getElementById('r-estado-agricola').value,
     variedad:document.getElementById('r-variedad').value.trim(),
     conservacion:document.getElementById('r-conservacion').value,
-    destareBandejaUnit:parseFloat(document.getElementById('r-destare-bandeja').value)||0,
-    pallets:parseFloat(document.getElementById('r-pallets').value)||0,
-    destarePalletUnit:parseFloat(document.getElementById('r-destare-pallet').value)||0,
-    destareTotal:((parseFloat(document.getElementById('r-bandejas').value)||0)*(parseFloat(document.getElementById('r-destare-bandeja').value)||0))+((parseFloat(document.getElementById('r-pallets').value)||0)*(parseFloat(document.getElementById('r-destare-pallet').value)||0)),
+    pallets:palletsDetalle,
+    totalPallets:palletsDetalle.length,
+    destareTotal:totalDestare,
     campo_cuartel:document.getElementById('r-campo').value,
-    envase:document.getElementById('r-envase').value,
-    bandejas:parseInt(document.getElementById('r-bandejas').value)||0,
+    envase:envaseConsolidado,
+    bandejas:totalBandejas,
     obs:document.getElementById('r-obs').value,
     responsable:document.getElementById('r-responsable').value.trim(),
     eval:eval_data, estado:'Recibido',
@@ -5576,15 +5617,17 @@ window.saveRecepcion=function(){
   showStatus('Recepción guardada ✓');
 }
 window.limpiarRecepcion=function(){
-  ['r-prov','r-rut','r-guia','r-kg','r-kg-neto','r-valor-kg','r-variedad','r-campo','r-obs','r-envase','r-bandejas','r-sag-prod','r-responsable','r-destare-bandeja','r-pallets','r-destare-pallet'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['r-prov','r-rut','r-guia','r-kg','r-kg-neto','r-valor-kg','r-variedad','r-campo','r-obs','r-sag-prod','r-responsable','rp-bandejas','rp-destare-bandeja','rp-destare-pallet'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   var elIva=document.getElementById('r-aplica-iva');if(elIva)elIva.checked=false;
-  var elDestareTotal=document.getElementById('r-destare-total');if(elDestareTotal)elDestareTotal.value='';
   var elEstadoAgro=document.getElementById('r-estado-agricola');if(elEstadoAgro)elEstadoAgro.value='';
   var elConserv=document.getElementById('r-conservacion');if(elConserv)elConserv.value='';
+  var elRpEnvase=document.getElementById('rp-envase');if(elRpEnvase)elRpEnvase.value='';
   var grupo=document.getElementById('grupo-sag-prod');if(grupo)grupo.style.display='none';
   document.getElementById('r-esp').value='';
   document.getElementById('r-fecha').value=today();
   document.getElementById('eval-grid').innerHTML='';
+  window._recepcionPallets=[];
+  renderTablaPalletsRecepcion();
 }
 window.renderRecepcionHist=function(){
   var esp=document.getElementById('fil-r-esp')?.value||'';
@@ -5608,8 +5651,19 @@ window.renderRecepcionHist=function(){
   });
   var saldoMap=calcSaldoEnvasesRaw('');
   document.getElementById('tbody-rec').innerHTML=fil.map(r=>{
-    var kSal=r.proveedor+'|'+r.especie+'|'+(r.envase||'-');
-    var s=saldoMap[kSal]||{ing:0,dev:0};
+    var s;
+    if(r.pallets&&r.pallets.length){
+      var tiposEnvase=[...new Set(r.pallets.map(function(p){return p.envase;}))];
+      s={ing:0,dev:0};
+      tiposEnvase.forEach(function(env){
+        var k=r.proveedor+'|'+r.especie+'|'+env;
+        var se=saldoMap[k]||{ing:0,dev:0};
+        s.ing+=se.ing; s.dev+=se.dev;
+      });
+    }else{
+      var kSal=r.proveedor+'|'+r.especie+'|'+(r.envase||'-');
+      s=saldoMap[kSal]||{ing:0,dev:0};
+    }
     var sal=s.ing-s.dev;
     var deudorTxt=sal>0?'MAFLES debe al productor':sal<0?'Productor debe a MAFLES':'✓ Saldado';
     var colorSal=sal>0?'#c0392b':sal<0?'#e67e22':'#27ae60';
@@ -5705,10 +5759,14 @@ window.generarConstanciaRecepcion=async function(id){
   const nCorr=String(r.correlativo||0).padStart(4,'0');
 
   const saldoMap=calcSaldoEnvasesRaw('');
-  const kSal=r.proveedor+'|'+r.especie+'|'+(r.envase||'-');
-  const s=saldoMap[kSal]||{ing:0,dev:0};
-  const sal=s.ing-s.dev;
-  const deudorTxt=sal>0?'MAFLES debe al productor':sal<0?'Productor debe a MAFLES':'Saldado';
+  const tiposEnvaseR=r.pallets&&r.pallets.length?[...new Set(r.pallets.map(function(p){return p.envase;}))]:[r.envase||'-'];
+  const movEnvases=tiposEnvaseR.map(function(env){
+    var k=r.proveedor+'|'+r.especie+'|'+env;
+    var se=saldoMap[k]||{ing:0,dev:0};
+    var saldoEnv=se.ing-se.dev;
+    var deudorEnv=saldoEnv>0?'MAFLES debe':saldoEnv<0?'Productor debe':'Saldado';
+    return [env, fmtNum(se.ing), fmtNum(se.dev), fmtNum(saldoEnv), deudorEnv];
+  });
 
   pdf.setFontSize(15);
   pdf.setTextColor(verde[0],verde[1],verde[2]);
@@ -5733,11 +5791,11 @@ window.generarConstanciaRecepcion=async function(id){
   let y = pdf.lastAutoTable.finalY + 6;
   pdf.setFontSize(11);
   pdf.setTextColor(verde[0],verde[1],verde[2]);
-  pdf.text('Detalle Pesaje Recepción', 14, y);
+  pdf.text('Resumen de Pesaje', 14, y);
   pdf.autoTable({
     startY: y+3,
-    head:[['Bandeja','Cant. Bandejas','Kg Brutos','Destare Total','Kg Netos']],
-    body:[[r.envase||'-', r.bandejas||0, fmtNum(r.kg)+' kg', fmtNum(r.destareTotal||0)+' kg', fmtNum(r.kgNeto)+' kg']],
+    head:[['Total Pallets','Total Bandejas','Kg Brutos','Destare Total','Kg Netos']],
+    body:[[r.totalPallets||(r.pallets?r.pallets.length:0)||1, r.bandejas||0, fmtNum(r.kg)+' kg', fmtNum(r.destareTotal||0)+' kg', fmtNum(r.kgNeto)+' kg']],
     headStyles:{fillColor:verde,textColor:255,fontSize:9},
     styles:{fontSize:9}
   });
@@ -5766,7 +5824,7 @@ window.generarConstanciaRecepcion=async function(id){
   pdf.autoTable({
     startY: y+3,
     head:[['Tipo Envase','Ingresadas','Devueltas','Saldo','Deudor']],
-    body:[[r.envase||'-', fmtNum(s.ing), fmtNum(s.dev), fmtNum(sal), deudorTxt]],
+    body: movEnvases,
     headStyles:{fillColor:verde,textColor:255,fontSize:9},
     styles:{fontSize:9}
   });
@@ -6040,9 +6098,17 @@ function calcSaldoEnvasesRaw(periodoSal){
       if(periodoSal==='mes'&&(fd.getMonth()!==hoyS.getMonth()||fd.getFullYear()!==hoyS.getFullYear()))return;
       if(periodoSal&&periodoSal.includes('-')&&periodoSal.length===7){var pts=periodoSal.split('-');if(fd.getMonth()!==parseInt(pts[1])-1||fd.getFullYear()!==parseInt(pts[0]))return;}
     }
-    var k=r.proveedor+'|'+r.especie+'|'+(r.envase||'-');
-    if(!saldo[k]) saldo[k]={prov:r.proveedor,rut:r.rut||'-',esp:r.especie,env:r.envase||'-',ing:0,dev:0};
-    saldo[k].ing+=parseInt(r.bandejas)||0;
+    if(r.pallets&&r.pallets.length){
+      r.pallets.forEach(function(p){
+        var k=r.proveedor+'|'+r.especie+'|'+(p.envase||'-');
+        if(!saldo[k]) saldo[k]={prov:r.proveedor,rut:r.rut||'-',esp:r.especie,env:p.envase||'-',ing:0,dev:0};
+        saldo[k].ing+=parseInt(p.bandejas)||0;
+      });
+    }else{
+      var k=r.proveedor+'|'+r.especie+'|'+(r.envase||'-');
+      if(!saldo[k]) saldo[k]={prov:r.proveedor,rut:r.rut||'-',esp:r.especie,env:r.envase||'-',ing:0,dev:0};
+      saldo[k].ing+=parseInt(r.bandejas)||0;
+    }
   });
   // Descontar devoluciones
   var normTxt=function(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();};
