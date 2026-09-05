@@ -5323,7 +5323,7 @@ function renderHistorialVentas(){
     var r=v.resumen||{};
     return '<tr><td>'+(v.numeroVenta||v.id)+'</td><td>'+fmtFecha(v.fecha)+'</td><td>'+(v.cliente||'-')+'</td>'
       +'<td>'+fmtNum(r.kgNetos||0)+' kg</td><td>$'+fmtNum(r.total||0)+'</td>'
-      +'<td><button class="btn btn-secondary" style="height:28px;font-size:11px;padding:0 8px" onclick="generarConstanciaVenta(\''+v.id+'\')"><i class="ti ti-file-download"></i> Constancia</button></td></tr>';
+      +'<td><button class="btn btn-secondary" style="height:28px;font-size:11px;padding:0 8px" onclick="generarConstanciaVenta(\''+v.id+'\')"><i class="ti ti-file-download"></i> PDF</button></td></tr>';
   }).join('')||'<tr><td colspan="6" style="text-align:center;color:#aaa;padding:1rem">Sin ventas registradas</td></tr>';
 }
 window.calcularKgNetoVenta=function(){
@@ -5585,7 +5585,7 @@ window.renderRecepcionHist=function(){
       <td style="font-weight:700;color:${colorSal}">${fmtNum(sal)}</td>
       <td style="font-size:11px;font-weight:600;color:${colorSal}">${deudorTxt}</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-secondary" style="height:30px;font-size:11px;padding:0 8px;margin-right:4px" onclick="generarConstanciaRecepcion('${r.id}')"><i class="ti ti-file-download"></i> Constancia</button>
+        <button class="btn btn-secondary" style="height:30px;font-size:11px;padding:0 8px;margin-right:4px" onclick="generarConstanciaRecepcion('${r.id}')"><i class="ti ti-file-download"></i> PDF</button>
         <button class="btn btn-danger" style="height:30px;font-size:15px;padding:0 10px;min-width:36px" onclick="delRec('${r.id}')">🗑️</button>
       </td>
     </tr>`;}).join('')||'<tr><td colspan="15" style="text-align:center;color:#aaa;padding:1rem">Sin registros</td></tr>';
@@ -5664,7 +5664,7 @@ window.generarConstanciaRecepcion=async function(id){
 
   pdf.setFontSize(15);
   pdf.setTextColor(verde[0],verde[1],verde[2]);
-  pdf.text('Constancia de Recepción — MAFLES', 14, 16);
+  pdf.text('Recepción — MAFLES', 14, 16);
   pdf.setFontSize(10);
   pdf.setTextColor(90,90,90);
   pdf.text('Compra N° '+nCorr, 14, 23);
@@ -5742,7 +5742,7 @@ window.generarConstanciaRecepcion=async function(id){
     }
   }catch(e){ console.warn('No se pudo agregar QR de info:', e); }
 
-  pdf.save('Constancia-TRZ-'+nCorr+'.pdf');
+  pdf.save('Recepcion-TRZ-'+nCorr+'.pdf');
 }
 
 // ===== CONSTANCIA DE VENTA (PDF) =====
@@ -5756,7 +5756,7 @@ window.generarConstanciaVenta=async function(id){
 
   pdf.setFontSize(15);
   pdf.setTextColor(verde[0],verde[1],verde[2]);
-  pdf.text('Constancia de Venta — MAFLES', 14, 16);
+  pdf.text('Venta — MAFLES', 14, 16);
   pdf.setFontSize(10);
   pdf.setTextColor(90,90,90);
   pdf.text('Venta N° '+(v.numeroVenta||v.id), 14, 23);
@@ -5819,7 +5819,7 @@ window.generarConstanciaVenta=async function(id){
     }
   }catch(e){ console.warn('No se pudo agregar QR de info:', e); }
 
-  pdf.save('Constancia-Venta-'+(v.numeroVenta||v.id)+'.pdf');
+  pdf.save('Venta-'+(v.numeroVenta||v.id)+'.pdf');
 }
 window.delRecEnv=async function(id){
   if(!confirm('¿Eliminar este ingreso de envases?'))return;
